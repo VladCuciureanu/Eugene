@@ -73,11 +73,11 @@ export function runStagesNonInteractive(
 ): void {
   print("");
 
-  if (!opts.skipStages.includes(1)) denialNonInteractive(errorOutput);
-  if (!opts.skipStages.includes(2)) angerNonInteractive();
-  if (!opts.skipStages.includes(3)) bargainingNonInteractive(errorOutput);
-  if (!opts.skipStages.includes(4)) depressionNonInteractive();
-  if (!opts.skipStages.includes(5)) acceptanceNonInteractive(opts.mantra!);
+  if (!shouldSkip(1, opts.skipStages)) denialNonInteractive(errorOutput);
+  if (!shouldSkip(2, opts.skipStages)) angerNonInteractive();
+  if (!shouldSkip(3, opts.skipStages)) bargainingNonInteractive(errorOutput);
+  if (!shouldSkip(4, opts.skipStages)) depressionNonInteractive();
+  if (!shouldSkip(5, opts.skipStages)) acceptanceNonInteractive(opts.mantra!);
   if (opts.hierarchical) blameNonInteractive();
 
   print("");
