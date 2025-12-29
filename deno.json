@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "tasks": {
     "dev": "deno run --allow-run --allow-env --allow-read src/main.ts",
-    "test": "deno test --allow-run --allow-env --allow-read test/",
+    "test": "deno test --allow-all test/",
     "install": "deno install --allow-run --allow-env --allow-read -n grief src/main.ts"
   },
   "fmt": {
