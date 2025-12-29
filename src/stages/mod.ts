@@ -1,5 +1,5 @@
-import type { GriefOptions } from "../cli.ts";
-import { griefSay, print } from "../prompt.ts";
+import type { EugeneOptions } from "../cli.ts";
+import { eugeneSay, print } from "../prompt.ts";
 import { denial, denialNonInteractive } from "./denial.ts";
 import { anger, angerNonInteractive } from "./anger.ts";
 import { bargaining, bargainingNonInteractive } from "./bargaining.ts";
@@ -11,7 +11,7 @@ const STAGE_NAMES = ["denial", "anger", "bargaining", "depression", "acceptance"
 
 function shouldSkip(stageNum: number, skipStages: number[]): boolean {
   if (!skipStages.includes(stageNum)) return false;
-  griefSay(
+  eugeneSay(
     `Skipping ${STAGE_NAMES[stageNum - 1]}. Grief counselors do not recommend this.`
   );
   return true;
@@ -19,14 +19,14 @@ function shouldSkip(stageNum: number, skipStages: number[]): boolean {
 
 export async function runStagesInteractive(
   errorOutput: string,
-  opts: GriefOptions
+  opts: EugeneOptions
 ): Promise<void> {
   let sigintBlocked = true;
 
   const sigintHandler = () => {
     if (sigintBlocked) {
       print("");
-      griefSay("You can't interrupt grief. Only process it.");
+      eugeneSay("You can't interrupt grief. Only process it.");
     }
   };
 
@@ -69,7 +69,7 @@ export async function runStagesInteractive(
 
 export function runStagesNonInteractive(
   errorOutput: string,
-  opts: GriefOptions
+  opts: EugeneOptions
 ): void {
   print("");
 

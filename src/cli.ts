@@ -1,6 +1,6 @@
 export type Speed = "slow" | "fast" | "instant";
 
-export interface GriefOptions {
+export interface EugeneOptions {
   command: string[];
   hierarchical: boolean;
   speed: Speed;
@@ -13,11 +13,11 @@ export interface GriefOptions {
 const DEFAULT_MANTRA = "The failure was not personal.";
 
 function printUsage(): never {
-  console.log(`grief — process your failed commands through the 5 stages
+  console.log(`eugene — process your failed commands through the 5 stages
 
 Usage:
-  grief [options] -- <command> [args...]
-  some-command 2>&1 | grief
+  eugene [options] -- <command> [args...]
+  some-command 2>&1 | eugene
 
 Options:
   --hierarchical     Enable blame stage (manager mode)
@@ -28,19 +28,19 @@ Options:
   -h, --help         Show this help
 
 Environment:
-  GRIEF_DISABLE=1    Disable grief entirely. For cowards.
-  NO_GRIEF=1         Alias for GRIEF_DISABLE.`);
+  EUGENE_DISABLE=1   Disable Eugene entirely. For cowards.
+  NO_EUGENE=1        Alias for EUGENE_DISABLE.`);
   Deno.exit(0);
 }
 
 export function checkEnv(): "run" | "disable" | "disable-snark" {
-  if (Deno.env.get("GRIEF_DISABLE") === "1") return "disable";
-  if (Deno.env.get("NO_GRIEF") === "1") return "disable-snark";
+  if (Deno.env.get("EUGENE_DISABLE") === "1") return "disable";
+  if (Deno.env.get("NO_EUGENE") === "1") return "disable-snark";
   return "run";
 }
 
-export function parseArgs(args: string[]): GriefOptions {
-  const opts: GriefOptions = {
+export function parseArgs(args: string[]): EugeneOptions {
+  const opts: EugeneOptions = {
     command: [],
     hierarchical: false,
     speed: "slow",
@@ -71,7 +71,7 @@ export function parseArgs(args: string[]): GriefOptions {
         i++;
         const val = args[i];
         if (val !== "slow" && val !== "fast" && val !== "instant") {
-          console.error(`grief: invalid speed '${val}'. Use slow, fast, or instant.`);
+          console.error(`eugene: invalid speed '${val}'. Use slow, fast, or instant.`);
           Deno.exit(1);
         }
         opts.speed = val;
@@ -81,7 +81,7 @@ export function parseArgs(args: string[]): GriefOptions {
         i++;
         opts.mantra = args[i];
         if (!opts.mantra) {
-          console.error("grief: --mantra requires a value.");
+          console.error("eugene: --mantra requires a value.");
           Deno.exit(1);
         }
         break;
@@ -89,7 +89,7 @@ export function parseArgs(args: string[]): GriefOptions {
         i++;
         const n = parseInt(args[i]);
         if (isNaN(n) || n < 1 || n > 5) {
-          console.error("grief: --skip-stage requires a number 1-5.");
+          console.error("eugene: --skip-stage requires a number 1-5.");
           Deno.exit(1);
         }
         opts.skipStages.push(n);
@@ -99,7 +99,7 @@ export function parseArgs(args: string[]): GriefOptions {
         opts.angerRoom = true;
         break;
       default:
-        console.error(`grief: unknown option '${arg}'`);
+        console.error(`eugene: unknown option '${arg}'`);
         Deno.exit(1);
     }
     i++;

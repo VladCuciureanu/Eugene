@@ -1,13 +1,13 @@
 import { parseArgs, checkEnv } from "./cli.ts";
 import { runCommand, readPipeInput, looksLikeError } from "./runner.ts";
 import { runStagesInteractive, runStagesNonInteractive } from "./stages/mod.ts";
-import { griefSay, print } from "./prompt.ts";
+import { eugeneSay, print } from "./prompt.ts";
 
 async function main() {
   const envCheck = checkEnv();
   if (envCheck === "disable") Deno.exit(0);
   if (envCheck === "disable-snark") {
-    griefSay("Avoiding your emotions, I see.");
+    eugeneSay("Avoiding your emotions, I see.");
     Deno.exit(0);
   }
 

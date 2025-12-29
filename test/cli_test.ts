@@ -63,19 +63,19 @@ Deno.test("parseArgs: multiple skip-stage", () => {
 });
 
 Deno.test("checkEnv: normal run", () => {
-  Deno.env.delete("GRIEF_DISABLE");
-  Deno.env.delete("NO_GRIEF");
+  Deno.env.delete("EUGENE_DISABLE");
+  Deno.env.delete("NO_EUGENE");
   assertEquals(checkEnv(), "run");
 });
 
-Deno.test("checkEnv: GRIEF_DISABLE", () => {
-  Deno.env.set("GRIEF_DISABLE", "1");
+Deno.test("checkEnv: EUGENE_DISABLE", () => {
+  Deno.env.set("EUGENE_DISABLE", "1");
   assertEquals(checkEnv(), "disable");
-  Deno.env.delete("GRIEF_DISABLE");
+  Deno.env.delete("EUGENE_DISABLE");
 });
 
-Deno.test("checkEnv: NO_GRIEF", () => {
-  Deno.env.set("NO_GRIEF", "1");
+Deno.test("checkEnv: NO_EUGENE", () => {
+  Deno.env.set("NO_EUGENE", "1");
   assertEquals(checkEnv(), "disable-snark");
-  Deno.env.delete("NO_GRIEF");
+  Deno.env.delete("NO_EUGENE");
 });

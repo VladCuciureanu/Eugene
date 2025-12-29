@@ -10,7 +10,7 @@ const RED = `${ESC}31m`;
 const BOLD = `${ESC}1m`;
 
 export const style = {
-  grief: (s: string) => `${CYAN}grief:${RESET} ${s}`,
+  eugene: (s: string) => `${CYAN}Eugene:${RESET} ${s}`,
   dim: (s: string) => `${DIM}${s}${RESET}`,
   warm: (s: string) => `${YELLOW}${s}${RESET}`,
   error: (s: string) => `${RED}${s}${RESET}`,
@@ -21,16 +21,16 @@ export function print(msg: string) {
   Deno.stderr.writeSync(new TextEncoder().encode(msg + "\n"));
 }
 
-export function griefSay(msg: string) {
-  print(style.grief(msg));
+export function eugeneSay(msg: string) {
+  print(style.eugene(msg));
 }
 
-export function griefDim(msg: string) {
-  print(style.grief(style.dim(msg)));
+export function eugeneDim(msg: string) {
+  print(style.eugene(style.dim(msg)));
 }
 
-export function griefWarm(msg: string) {
-  print(style.grief(style.warm(msg)));
+export function eugeneWarm(msg: string) {
+  print(style.eugene(style.warm(msg)));
 }
 
 const SPEED_MULTIPLIER: Record<Speed, number> = {
@@ -45,7 +45,7 @@ export function delay(ms: number, speed: Speed): Promise<void> {
 
 export async function timedPrint(msg: string, pauseMs: number, speed: Speed) {
   await delay(pauseMs, speed);
-  griefDim(msg);
+  eugeneDim(msg);
 }
 
 const decoder = new TextDecoder();
