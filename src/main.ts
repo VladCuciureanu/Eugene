@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { parseArgs, checkEnv } from "./cli.ts";
-import { runCommand, readPipeInput, looksLikeError } from "./runner.ts";
+import { runCommand, readPipeInput, looksLikeError, describeSpawnError } from "./runner.ts";
 import { runStagesInteractive, runStagesNonInteractive } from "./stages/mod.ts";
 import { eugeneSay, print } from "./prompt.ts";
 
@@ -36,7 +36,15 @@ async function main() {
     return;
   }
 
-  const result = await runCommand(opts.command);
+  let result;
+  try {
+    result = await runCommand(opts.command);
+  } catch (err) {
+    const { message, exitCode } = describeSpawnError(opts.command, err);
+    console.error(message);
+    process.exitCode = exitCode;
+    return;
+  }
 
   if (result.stdout) {
     process.stdout.write(result.stdout);

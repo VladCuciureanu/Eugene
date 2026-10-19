@@ -29,6 +29,30 @@ export function runCommand(command: string[]): Promise<RunResult> {
   });
 }
 
+/**
+ * Turns a failure to start `command` into a user-facing message and exit code
+ * (127 for "not found", 126 for "not executable", like a shell).
+ */
+export function describeSpawnError(
+  command: string[],
+  err: unknown
+): { message: string; exitCode: number } {
+  const cmd = command[0];
+  const code = (err as NodeJS.ErrnoException | undefined)?.code;
+  const hint = "Run 'eugene --help' for usage.";
+  if (code === "ENOENT") {
+    return { message: `eugene: command not found: ${cmd}
+${hint}`, exitCode: 127 };
+  }
+  if (code === "EACCES") {
+    return { message: `eugene: permission denied: ${cmd}
+${hint}`, exitCode: 126 };
+  }
+  const reason = err instanceof Error ? err.message : String(err);
+  return { message: `eugene: failed to run ${cmd}: ${reason}
+${hint}`, exitCode: 126 };
+}
+
 export async function readPipeInput(): Promise<string> {
   const decoder = new TextDecoder();
   const chunks: string[] = [];

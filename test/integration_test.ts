@@ -68,3 +68,14 @@ test("integration: skip-stage works", async () => {
     "Should mention skipping. Got: " + result.stderr.slice(0, 500)
   );
 });
+
+test("integration: unknown command prints a friendly error without a stack trace", async () => {
+  const result = await runEugene(["--", "eugene-no-such-command-xyz"]);
+  assert.deepEqual(result.code, 127);
+  assert.ok(
+    result.stderr.includes("command not found: eugene-no-such-command-xyz"),
+    "Should explain the command was not found"
+  );
+  assert.ok(!/\n\s+at /.test(result.stderr), "Should not print a stack trace");
+  assert.ok(!result.stderr.includes("ErrnoException"), "Should not leak internals");
+});
