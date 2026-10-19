@@ -30,7 +30,7 @@ export async function runStagesInteractive(
     }
   };
 
-  Deno.addSignalListener("SIGINT", sigintHandler);
+  process.on("SIGINT", sigintHandler);
 
   try {
     print("");
@@ -63,7 +63,7 @@ export async function runStagesInteractive(
 
     print("");
   } finally {
-    Deno.removeSignalListener("SIGINT", sigintHandler);
+    process.off("SIGINT", sigintHandler);
   }
 }
 

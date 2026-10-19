@@ -30,12 +30,12 @@ Options:
 Environment:
   EUGENE_DISABLE=1   Disable Eugene entirely. For cowards.
   NO_EUGENE=1        Alias for EUGENE_DISABLE.`);
-  Deno.exit(0);
+  process.exit(0);
 }
 
 export function checkEnv(): "run" | "disable" | "disable-snark" {
-  if (Deno.env.get("EUGENE_DISABLE") === "1") return "disable";
-  if (Deno.env.get("NO_EUGENE") === "1") return "disable-snark";
+  if (process.env.EUGENE_DISABLE === "1") return "disable";
+  if (process.env.NO_EUGENE === "1") return "disable-snark";
   return "run";
 }
 
@@ -72,7 +72,7 @@ export function parseArgs(args: string[]): EugeneOptions {
         const val = args[i];
         if (val !== "slow" && val !== "fast" && val !== "instant") {
           console.error(`eugene: invalid speed '${val}'. Use slow, fast, or instant.`);
-          Deno.exit(1);
+          process.exit(1);
         }
         opts.speed = val;
         break;
@@ -82,7 +82,7 @@ export function parseArgs(args: string[]): EugeneOptions {
         opts.mantra = args[i];
         if (!opts.mantra) {
           console.error("eugene: --mantra requires a value.");
-          Deno.exit(1);
+          process.exit(1);
         }
         break;
       case "--skip-stage": {
@@ -90,7 +90,7 @@ export function parseArgs(args: string[]): EugeneOptions {
         const n = parseInt(args[i]);
         if (isNaN(n) || n < 1 || n > 5) {
           console.error("eugene: --skip-stage requires a number 1-5.");
-          Deno.exit(1);
+          process.exit(1);
         }
         opts.skipStages.push(n);
         break;
@@ -100,12 +100,12 @@ export function parseArgs(args: string[]): EugeneOptions {
         break;
       default:
         console.error(`eugene: unknown option '${arg}'`);
-        Deno.exit(1);
+        process.exit(1);
     }
     i++;
   }
 
-  if (opts.command.length === 0 && Deno.stdin.isTerminal()) {
+  if (opts.command.length === 0 && process.stdin.isTTY) {
     printUsage();
   }
 

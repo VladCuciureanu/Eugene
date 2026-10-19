@@ -1,36 +1,40 @@
+import { spawn } from "node:child_process";
+import os from "node:os";
+
 export interface RunResult {
   exitCode: number;
   stdout: string;
   stderr: string;
 }
 
-export async function runCommand(command: string[]): Promise<RunResult> {
+export function runCommand(command: string[]): Promise<RunResult> {
   const [cmd, ...args] = command;
-  const proc = new Deno.Command(cmd, {
-    args,
-    stdout: "piped",
-    stderr: "piped",
+  const proc = spawn(cmd, args, { stdio: ["inherit", "pipe", "pipe"] });
+
+  const stdout: Buffer[] = [];
+  const stderr: Buffer[] = [];
+  proc.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
+  proc.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
+
+  return new Promise((resolve, reject) => {
+    proc.once("error", reject);
+    proc.once("close", (code, signal) => {
+      const decoder = new TextDecoder();
+      resolve({
+        exitCode: code ?? 128 + (signal ? os.constants.signals[signal] : 0),
+        stdout: decoder.decode(Buffer.concat(stdout)),
+        stderr: decoder.decode(Buffer.concat(stderr)),
+      });
+    });
   });
-
-  const output = await proc.output();
-  const decoder = new TextDecoder();
-
-  return {
-    exitCode: output.code,
-    stdout: decoder.decode(output.stdout),
-    stderr: decoder.decode(output.stderr),
-  };
 }
 
 export async function readPipeInput(): Promise<string> {
   const decoder = new TextDecoder();
   const chunks: string[] = [];
-  const reader = Deno.stdin.readable.getReader();
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(decoder.decode(value, { stream: true }));
+  for await (const chunk of process.stdin) {
+    chunks.push(decoder.decode(chunk, { stream: true }));
   }
 
   return chunks.join("");

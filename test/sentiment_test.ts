@@ -1,48 +1,49 @@
-import { assertEquals } from "jsr:@std/assert";
+import assert from "node:assert/strict";
+import { test } from "node:test";
 import { isNegation, capsRatio, punctuationDensity, isCalm } from "../src/sentiment.ts";
 
-Deno.test("isNegation: detects denial words", () => {
-  assertEquals(isNegation("no"), true);
-  assertEquals(isNegation("NO"), true);
-  assertEquals(isNegation("no!"), true);
-  assertEquals(isNegation("nope"), true);
-  assertEquals(isNegation("never"), true);
-  assertEquals(isNegation("impossible"), true);
-  assertEquals(isNegation("nah"), true);
-  assertEquals(isNegation("no way"), true);
-  assertEquals(isNegation("I don't believe"), true);
-  assertEquals(isNegation("this isn't real"), true);
+test("isNegation: detects denial words", () => {
+  assert.deepEqual(isNegation("no"), true);
+  assert.deepEqual(isNegation("NO"), true);
+  assert.deepEqual(isNegation("no!"), true);
+  assert.deepEqual(isNegation("nope"), true);
+  assert.deepEqual(isNegation("never"), true);
+  assert.deepEqual(isNegation("impossible"), true);
+  assert.deepEqual(isNegation("nah"), true);
+  assert.deepEqual(isNegation("no way"), true);
+  assert.deepEqual(isNegation("I don't believe"), true);
+  assert.deepEqual(isNegation("this isn't real"), true);
 });
 
-Deno.test("isNegation: accepts non-denial", () => {
-  assertEquals(isNegation("fine"), false);
-  assertEquals(isNegation("ok"), false);
-  assertEquals(isNegation("yes"), false);
-  assertEquals(isNegation("..."), false);
-  assertEquals(isNegation("I guess"), false);
+test("isNegation: accepts non-denial", () => {
+  assert.deepEqual(isNegation("fine"), false);
+  assert.deepEqual(isNegation("ok"), false);
+  assert.deepEqual(isNegation("yes"), false);
+  assert.deepEqual(isNegation("..."), false);
+  assert.deepEqual(isNegation("I guess"), false);
 });
 
-Deno.test("capsRatio: measures uppercase ratio", () => {
-  assertEquals(capsRatio("HELLO"), 1);
-  assertEquals(capsRatio("hello"), 0);
-  assertEquals(capsRatio("Hello"), 0.2);
-  assertEquals(capsRatio("!!!"), 0);
+test("capsRatio: measures uppercase ratio", () => {
+  assert.deepEqual(capsRatio("HELLO"), 1);
+  assert.deepEqual(capsRatio("hello"), 0);
+  assert.deepEqual(capsRatio("Hello"), 0.2);
+  assert.deepEqual(capsRatio("!!!"), 0);
 });
 
-Deno.test("punctuationDensity: measures density", () => {
-  assertEquals(punctuationDensity("!!!"), 1);
-  assertEquals(punctuationDensity("hello"), 0);
-  assertEquals(punctuationDensity("hi!"), 1 / 3);
+test("punctuationDensity: measures density", () => {
+  assert.deepEqual(punctuationDensity("!!!"), 1);
+  assert.deepEqual(punctuationDensity("hello"), 0);
+  assert.deepEqual(punctuationDensity("hi!"), 1 / 3);
 });
 
-Deno.test("isCalm: detects calm messages", () => {
-  assertEquals(isCalm("ok"), true);
-  assertEquals(isCalm("fine I guess"), true);
-  assertEquals(isCalm("yeah"), true);
+test("isCalm: detects calm messages", () => {
+  assert.deepEqual(isCalm("ok"), true);
+  assert.deepEqual(isCalm("fine I guess"), true);
+  assert.deepEqual(isCalm("yeah"), true);
 });
 
-Deno.test("isCalm: detects angry messages", () => {
-  assertEquals(isCalm("THIS IS GARBAGE AND I HATE EVERYTHING ABOUT IT"), false);
-  assertEquals(isCalm("AAAARGH!!!!"), false);
-  assertEquals(isCalm("!!!!????!!!!"), false);
+test("isCalm: detects angry messages", () => {
+  assert.deepEqual(isCalm("THIS IS GARBAGE AND I HATE EVERYTHING ABOUT IT"), false);
+  assert.deepEqual(isCalm("AAAARGH!!!!"), false);
+  assert.deepEqual(isCalm("!!!!????!!!!"), false);
 });

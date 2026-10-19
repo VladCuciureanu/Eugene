@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { parseArgs, checkEnv } from "./cli.ts";
 import { runCommand, readPipeInput, looksLikeError } from "./runner.ts";
 import { runStagesInteractive, runStagesNonInteractive } from "./stages/mod.ts";
@@ -5,21 +6,23 @@ import { eugeneSay, print } from "./prompt.ts";
 
 async function main() {
   const envCheck = checkEnv();
-  if (envCheck === "disable") Deno.exit(0);
+  if (envCheck === "disable") process.exit(0);
   if (envCheck === "disable-snark") {
     eugeneSay("Avoiding your emotions, I see.");
-    Deno.exit(0);
+    process.exitCode = 0;
+    return;
   }
 
-  const opts = parseArgs(Deno.args);
-  const isInteractive = Deno.stdin.isTerminal();
+  const opts = parseArgs(process.argv.slice(2));
+  const isInteractive = Boolean(process.stdin.isTTY);
 
   if (opts.pipeMode) {
     const input = await readPipeInput();
 
     if (!looksLikeError(input)) {
-      Deno.stdout.writeSync(new TextEncoder().encode(input));
-      Deno.exit(0);
+      process.stdout.write(input);
+      process.exitCode = 0;
+      return;
     }
 
     if (isInteractive) {
@@ -28,21 +31,23 @@ async function main() {
       runStagesNonInteractive(input, opts);
     }
 
-    Deno.stdout.writeSync(new TextEncoder().encode(input));
-    Deno.exit(1);
+    process.stdout.write(input);
+    process.exitCode = 1;
+    return;
   }
 
   const result = await runCommand(opts.command);
 
   if (result.stdout) {
-    Deno.stdout.writeSync(new TextEncoder().encode(result.stdout));
+    process.stdout.write(result.stdout);
   }
   if (result.stderr) {
-    Deno.stderr.writeSync(new TextEncoder().encode(result.stderr));
+    process.stderr.write(result.stderr);
   }
 
   if (result.exitCode === 0) {
-    Deno.exit(0);
+    process.exitCode = 0;
+    return;
   }
 
   const errorOutput = result.stderr || result.stdout;
@@ -53,7 +58,7 @@ async function main() {
     runStagesNonInteractive(errorOutput, opts);
   }
 
-  Deno.exit(result.exitCode);
+  process.exitCode = result.exitCode;
 }
 
 if (import.meta.main) {

@@ -18,7 +18,7 @@ export const style = {
 };
 
 export function print(msg: string) {
-  Deno.stderr.writeSync(new TextEncoder().encode(msg + "\n"));
+  process.stderr.write(msg + "\n");
 }
 
 export function eugeneSay(msg: string) {
@@ -49,13 +49,23 @@ export async function timedPrint(msg: string, pauseMs: number, speed: Speed) {
 }
 
 const decoder = new TextDecoder();
-const encoder = new TextEncoder();
 
-export async function prompt(prefix = "> "): Promise<string> {
-  Deno.stderr.writeSync(encoder.encode(style.dim(prefix)));
+export function prompt(prefix = "> "): Promise<string> {
+  process.stderr.write(style.dim(prefix));
 
-  const buf = new Uint8Array(1024);
-  const n = await Deno.stdin.read(buf);
-  if (n === null) return "";
-  return decoder.decode(buf.subarray(0, n)).trim();
+  const stdin = process.stdin;
+  if (stdin.readableEnded) return Promise.resolve("");
+  return new Promise((resolve) => {
+    const finish = (text: string) => {
+      stdin.off("data", onData);
+      stdin.off("end", onEnd);
+      stdin.pause();
+      resolve(text);
+    };
+    const onData = (chunk: Buffer) => finish(decoder.decode(chunk).trim());
+    const onEnd = () => finish("");
+    stdin.on("data", onData);
+    stdin.once("end", onEnd);
+    stdin.resume();
+  });
 }

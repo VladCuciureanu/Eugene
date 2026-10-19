@@ -1,34 +1,35 @@
-import { assertEquals } from "jsr:@std/assert";
+import assert from "node:assert/strict";
+import { test } from "node:test";
 import { runCommand, looksLikeError } from "../src/runner.ts";
 
-Deno.test("runCommand: successful command", async () => {
+test("runCommand: successful command", async () => {
   const result = await runCommand(["echo", "hello"]);
-  assertEquals(result.exitCode, 0);
-  assertEquals(result.stdout.trim(), "hello");
+  assert.deepEqual(result.exitCode, 0);
+  assert.deepEqual(result.stdout.trim(), "hello");
 });
 
-Deno.test("runCommand: failing command", async () => {
+test("runCommand: failing command", async () => {
   const result = await runCommand(["sh", "-c", "echo oops >&2; exit 1"]);
-  assertEquals(result.exitCode, 1);
-  assertEquals(result.stderr.trim(), "oops");
+  assert.deepEqual(result.exitCode, 1);
+  assert.deepEqual(result.stderr.trim(), "oops");
 });
 
-Deno.test("runCommand: captures stdout", async () => {
+test("runCommand: captures stdout", async () => {
   const result = await runCommand(["sh", "-c", "echo line1; echo line2"]);
-  assertEquals(result.exitCode, 0);
-  assertEquals(result.stdout.trim(), "line1\nline2");
+  assert.deepEqual(result.exitCode, 0);
+  assert.deepEqual(result.stdout.trim(), "line1\nline2");
 });
 
-Deno.test("looksLikeError: detects error patterns", () => {
-  assertEquals(looksLikeError("Error: something went wrong"), true);
-  assertEquals(looksLikeError("FATAL: out of memory"), true);
-  assertEquals(looksLikeError("Traceback (most recent call last):"), true);
-  assertEquals(looksLikeError("compilation failed"), true);
-  assertEquals(looksLikeError("ENOENT: no such file"), true);
+test("looksLikeError: detects error patterns", () => {
+  assert.deepEqual(looksLikeError("Error: something went wrong"), true);
+  assert.deepEqual(looksLikeError("FATAL: out of memory"), true);
+  assert.deepEqual(looksLikeError("Traceback (most recent call last):"), true);
+  assert.deepEqual(looksLikeError("compilation failed"), true);
+  assert.deepEqual(looksLikeError("ENOENT: no such file"), true);
 });
 
-Deno.test("looksLikeError: passes clean output", () => {
-  assertEquals(looksLikeError("Build succeeded"), false);
-  assertEquals(looksLikeError("All tests passed"), false);
-  assertEquals(looksLikeError("Done in 1.2s"), false);
+test("looksLikeError: passes clean output", () => {
+  assert.deepEqual(looksLikeError("Build succeeded"), false);
+  assert.deepEqual(looksLikeError("All tests passed"), false);
+  assert.deepEqual(looksLikeError("Done in 1.2s"), false);
 });

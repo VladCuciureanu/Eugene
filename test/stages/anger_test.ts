@@ -1,5 +1,6 @@
+import { test } from "node:test";
 import { angerNonInteractive } from "../../src/stages/anger.ts";
 
-Deno.test("angerNonInteractive: runs without error", () => {
+test("angerNonInteractive: runs without error", () => {
   angerNonInteractive();
 });

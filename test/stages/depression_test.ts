@@ -1,5 +1,6 @@
+import { test } from "node:test";
 import { depressionNonInteractive } from "../../src/stages/depression.ts";
 
-Deno.test("depressionNonInteractive: runs without error", () => {
+test("depressionNonInteractive: runs without error", () => {
   depressionNonInteractive();
 });

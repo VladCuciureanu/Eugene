@@ -1,28 +1,30 @@
-import { assertEquals } from "jsr:@std/assert";
+import assert from "node:assert/strict";
+import { test } from "node:test";
 import { parseArgs, checkEnv } from "../src/cli.ts";
 
-// Stub Deno.stdin.isTerminal to allow empty commands in tests
-const originalIsTerminal = Deno.stdin.isTerminal;
+// Stub process.stdin.isTTY to allow empty commands in tests
+const originalIsTTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY");
 
 function withNonTTY(fn: () => void) {
-  Object.defineProperty(Deno.stdin, "isTerminal", { value: () => false, configurable: true });
+  Object.defineProperty(process.stdin, "isTTY", { value: false, configurable: true });
   try {
     fn();
   } finally {
-    Object.defineProperty(Deno.stdin, "isTerminal", {
-      value: originalIsTerminal,
-      configurable: true,
-    });
+    if (originalIsTTY) {
+      Object.defineProperty(process.stdin, "isTTY", originalIsTTY);
+    } else {
+      delete (process.stdin as { isTTY?: boolean }).isTTY;
+    }
   }
 }
 
-Deno.test("parseArgs: basic command after --", () => {
+test("parseArgs: basic command after --", () => {
   const opts = parseArgs(["--", "npm", "test"]);
-  assertEquals(opts.command, ["npm", "test"]);
-  assertEquals(opts.pipeMode, false);
+  assert.deepEqual(opts.command, ["npm", "test"]);
+  assert.deepEqual(opts.pipeMode, false);
 });
 
-Deno.test("parseArgs: all flags", () => {
+test("parseArgs: all flags", () => {
   const opts = parseArgs([
     "--hierarchical",
     "--speed",
@@ -36,46 +38,46 @@ Deno.test("parseArgs: all flags", () => {
     "make",
     "build",
   ]);
-  assertEquals(opts.hierarchical, true);
-  assertEquals(opts.speed, "fast");
-  assertEquals(opts.mantra, "bugs happen");
-  assertEquals(opts.skipStages, [3]);
-  assertEquals(opts.angerRoom, true);
-  assertEquals(opts.command, ["make", "build"]);
+  assert.deepEqual(opts.hierarchical, true);
+  assert.deepEqual(opts.speed, "fast");
+  assert.deepEqual(opts.mantra, "bugs happen");
+  assert.deepEqual(opts.skipStages, [3]);
+  assert.deepEqual(opts.angerRoom, true);
+  assert.deepEqual(opts.command, ["make", "build"]);
 });
 
-Deno.test("parseArgs: pipe mode when no command and not TTY", () => {
+test("parseArgs: pipe mode when no command and not TTY", () => {
   withNonTTY(() => {
     const opts = parseArgs([]);
-    assertEquals(opts.pipeMode, true);
-    assertEquals(opts.command, []);
+    assert.deepEqual(opts.pipeMode, true);
+    assert.deepEqual(opts.command, []);
   });
 });
 
-Deno.test("parseArgs: default mantra", () => {
+test("parseArgs: default mantra", () => {
   const opts = parseArgs(["--", "echo", "hi"]);
-  assertEquals(opts.mantra, "The failure was not personal.");
+  assert.deepEqual(opts.mantra, "The failure was not personal.");
 });
 
-Deno.test("parseArgs: multiple skip-stage", () => {
+test("parseArgs: multiple skip-stage", () => {
   const opts = parseArgs(["--skip-stage", "1", "--skip-stage", "4", "--", "ls"]);
-  assertEquals(opts.skipStages, [1, 4]);
+  assert.deepEqual(opts.skipStages, [1, 4]);
 });
 
-Deno.test("checkEnv: normal run", () => {
-  Deno.env.delete("EUGENE_DISABLE");
-  Deno.env.delete("NO_EUGENE");
-  assertEquals(checkEnv(), "run");
+test("checkEnv: normal run", () => {
+  delete process.env.EUGENE_DISABLE;
+  delete process.env.NO_EUGENE;
+  assert.deepEqual(checkEnv(), "run");
 });
 
-Deno.test("checkEnv: EUGENE_DISABLE", () => {
-  Deno.env.set("EUGENE_DISABLE", "1");
-  assertEquals(checkEnv(), "disable");
-  Deno.env.delete("EUGENE_DISABLE");
+test("checkEnv: EUGENE_DISABLE", () => {
+  process.env.EUGENE_DISABLE = "1";
+  assert.deepEqual(checkEnv(), "disable");
+  delete process.env.EUGENE_DISABLE;
 });
 
-Deno.test("checkEnv: NO_EUGENE", () => {
-  Deno.env.set("NO_EUGENE", "1");
-  assertEquals(checkEnv(), "disable-snark");
-  Deno.env.delete("NO_EUGENE");
+test("checkEnv: NO_EUGENE", () => {
+  process.env.NO_EUGENE = "1";
+  assert.deepEqual(checkEnv(), "disable-snark");
+  delete process.env.NO_EUGENE;
 });

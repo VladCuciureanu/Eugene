@@ -1,5 +1,6 @@
+import { test } from "node:test";
 import { blameNonInteractive } from "../../src/stages/blame.ts";
 
-Deno.test("blameNonInteractive: runs without error", () => {
+test("blameNonInteractive: runs without error", () => {
   blameNonInteractive();
 });
