@@ -17,18 +17,45 @@ function shouldSkip(stageNum: number, skipStages: number[]): boolean {
   return true;
 }
 
+export interface SigintController {
+  /** The SIGINT listener to install on the process. */
+  handler: () => void;
+  /** Marks a skippable stage as running; returns a signal aborted on the next SIGINT. */
+  beginSkippable(): AbortSignal;
+  /** Marks the skippable stage as finished; SIGINT is blocked again. */
+  endSkippable(): void;
+}
+
+export function createSigintController(): SigintController {
+  let skippable: AbortController | null = null;
+
+  return {
+    handler: () => {
+      print("");
+      if (skippable) {
+        skippable.abort();
+        skippable = null;
+        eugeneSay("Fine. We'll move on.");
+      } else {
+        eugeneSay("You can't interrupt grief. Only process it.");
+      }
+    },
+    beginSkippable() {
+      skippable = new AbortController();
+      return skippable.signal;
+    },
+    endSkippable() {
+      skippable = null;
+    },
+  };
+}
+
 export async function runStagesInteractive(
   errorOutput: string,
   opts: EugeneOptions
 ): Promise<void> {
-  let sigintBlocked = true;
-
-  const sigintHandler = () => {
-    if (sigintBlocked) {
-      print("");
-      eugeneSay("You can't interrupt grief. Only process it.");
-    }
-  };
+  const sigint = createSigintController();
+  const sigintHandler = sigint.handler;
 
   process.on("SIGINT", sigintHandler);
 
@@ -48,9 +75,12 @@ export async function runStagesInteractive(
     }
 
     if (!shouldSkip(4, opts.skipStages)) {
-      sigintBlocked = false;
-      await depression(opts.speed);
-      sigintBlocked = true;
+      const signal = sigint.beginSkippable();
+      try {
+        await depression(opts.speed, signal);
+      } finally {
+        sigint.endSkippable();
+      }
     }
 
     if (!shouldSkip(5, opts.skipStages)) {

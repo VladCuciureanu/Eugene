@@ -39,12 +39,29 @@ const SPEED_MULTIPLIER: Record<Speed, number> = {
   instant: 0.05,
 };
 
-export function delay(ms: number, speed: Speed): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms * SPEED_MULTIPLIER[speed]));
+export function delay(ms: number, speed: Speed, signal?: AbortSignal): Promise<void> {
+  if (signal?.aborted) return Promise.resolve();
+  return new Promise((resolve) => {
+    const onAbort = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms * SPEED_MULTIPLIER[speed]);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
-export async function timedPrint(msg: string, pauseMs: number, speed: Speed) {
-  await delay(pauseMs, speed);
+export async function timedPrint(
+  msg: string,
+  pauseMs: number,
+  speed: Speed,
+  signal?: AbortSignal
+) {
+  await delay(pauseMs, speed, signal);
+  if (signal?.aborted) return;
   eugeneDim(msg);
 }
 
