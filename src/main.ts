@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { checkEnv, parseArgs } from "./cli.ts";
+import { checkEnv, type EugeneOptions, parseArgs, USAGE, UsageError } from "./cli.ts";
 import { eugeneSay, io, openTerminalInput } from "./prompt.ts";
 import {
   describeSpawnError,
@@ -19,7 +19,19 @@ async function main() {
     return;
   }
 
-  const opts = parseArgs(process.argv.slice(2));
+  let opts: EugeneOptions;
+  try {
+    opts = parseArgs(process.argv.slice(2));
+  } catch (err) {
+    if (!(err instanceof UsageError)) throw err;
+    console.error(`eugene: ${err.message}`);
+    process.exitCode = 1;
+    return;
+  }
+  if (opts.help) {
+    console.log(USAGE);
+    return;
+  }
 
   if (opts.pipeMode) {
     const input = await readPipeInput();

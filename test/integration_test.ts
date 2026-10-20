@@ -108,3 +108,17 @@ test("integration: pipe mode without a visible terminal grieves non-interactivel
   assert.ok(result.stderr.includes("piped boom"), "the error is shown in denial");
   assert.ok(result.stderr.includes("Go in peace."), "all stages run to the end");
 });
+
+test("integration: invalid option exits 1 with a message and no stack trace", async () => {
+  const result = await runEugene(["--speed", "ludicrous", "--", "echo", "hi"]);
+  assert.equal(result.code, 1);
+  assert.match(result.stderr, /^eugene: invalid speed 'ludicrous'/);
+  assert.ok(!/\n\s+at /.test(result.stderr), "Should not print a stack trace");
+  assert.equal(result.stdout, "", "the command must not run");
+});
+
+test("integration: --help prints usage and exits 0", async () => {
+  const result = await runEugene(["--help"]);
+  assert.equal(result.code, 0);
+  assert.match(result.stdout, /Usage:\n {2}eugene \[options\] -- <command>/);
+});

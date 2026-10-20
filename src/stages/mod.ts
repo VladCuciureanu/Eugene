@@ -82,7 +82,7 @@ export async function runStagesInteractive(
     }
 
     if (!shouldSkip(5, opts.skipStages)) {
-      await acceptance(opts.mantra!);
+      await acceptance(opts.mantra);
     }
 
     if (opts.hierarchical) {
@@ -103,7 +103,7 @@ export function runStagesNonInteractive(errorOutput: string, opts: EugeneOptions
   if (!shouldSkip(2, opts.skipStages)) angerNonInteractive();
   if (!shouldSkip(3, opts.skipStages)) bargainingNonInteractive(errorOutput);
   if (!shouldSkip(4, opts.skipStages)) depressionNonInteractive();
-  if (!shouldSkip(5, opts.skipStages)) acceptanceNonInteractive(opts.mantra!);
+  if (!shouldSkip(5, opts.skipStages)) acceptanceNonInteractive(opts.mantra);
   if (opts.hierarchical) blameNonInteractive();
 
   print("");
