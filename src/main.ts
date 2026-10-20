@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { checkEnv, type EugeneOptions, parseArgs, USAGE, UsageError } from "./cli.ts";
-import { eugeneSay, io, openTerminalInput } from "./prompt.ts";
+import { canPromptOnStdio, eugeneSay, io, openTerminalInput } from "./prompt.ts";
 import {
   describeSpawnError,
   looksLikeError,
@@ -76,7 +76,7 @@ async function main() {
 
   const errorOutput = result.stderr || result.stdout;
 
-  if (process.stdin.isTTY) {
+  if (canPromptOnStdio()) {
     await runStagesInteractive(errorOutput, opts);
   } else {
     runStagesNonInteractive(errorOutput, opts);

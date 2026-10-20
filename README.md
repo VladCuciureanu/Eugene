@@ -88,7 +88,7 @@ Wrapping a command: its stdout and stderr stream through live, and the grief use
 
 Pipe mode: Eugene reads all of stdin. If it contains nothing that looks like an error, it is passed through and Eugene exits 0. Otherwise the stages run, answers are read from the terminal (`/dev/tty`, or the console on Windows), the input is written to stdout and Eugene exits 1.
 
-Eugene talks on stderr. When it cannot ask questions (stdin is not a terminal when wrapping a command; no terminal or stderr redirected in pipe mode), it prints all stages without waiting for answers.
+Eugene talks on stderr. When it cannot ask questions (stdin or stderr is not a terminal when wrapping a command; no terminal or stderr redirected in pipe mode), it prints all stages without waiting for answers.
 
 Eugene's options go before `--`; values can be written `--speed fast` or `--speed=fast`. Unknown or invalid options, and arguments before `--`, print a one-line error to stderr and exit 1.
 

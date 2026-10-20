@@ -140,6 +140,14 @@ export function inputEnded(): boolean {
   return currentReader().exhausted;
 }
 
+/**
+ * Whether Eugene can ask questions when wrapping a command: answers are read from stdin and
+ * the questions are written to stderr, so both have to be the terminal.
+ */
+export function canPromptOnStdio(): boolean {
+  return Boolean(process.stdin.isTTY && process.stderr.isTTY);
+}
+
 const TERMINAL_PATH = process.platform === "win32" ? "\\\\.\\CONIN$" : "/dev/tty";
 
 /**
