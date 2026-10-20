@@ -38,3 +38,13 @@ test("generateSuggestions: contextual for .json files", () => {
   const hasContextual = suggestions.some((s) => s.includes("package.json"));
   assert.ok(hasContextual, "Should include contextual suggestion for .json file");
 });
+
+test("generateSuggestions: none start with 'just' (Eugene already says 'What if you just')", () => {
+  const all = [
+    ...generateSuggestions("", 100),
+    ...generateSuggestions("Error in 'main.ts' and 'app.js' and 'auth.spec'", 3),
+  ];
+  for (const s of all) {
+    assert.ok(!/^just\b/.test(s), `starts with 'just': ${s}`);
+  }
+});

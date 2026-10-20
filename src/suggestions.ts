@@ -6,11 +6,11 @@ const GENERIC_SUGGESTIONS = [
   "mass-delete node_modules and pray? It's worked before.",
   "mass-convert it to a microservice? That'll definitely simplify things.",
   "mass-revert to the last commit that worked and pretend today never happened?",
-  "just mass-add '// @ts-ignore' above every line?",
+  "mass-add '// @ts-ignore' above every line?",
   "mass-replace your build tool with a shell script that just echoes 'success'?",
   "mass-turn it off and on again? The whole computer.",
   "mass-switch to a language without errors? I hear HTML is nice.",
-  "just mass-copy the answer from Stack Overflow without reading it?",
+  "mass-copy the answer from Stack Overflow without reading it?",
 ];
 
 function extractKeywords(errorOutput: string): string[] {
@@ -29,7 +29,7 @@ function extractKeywords(errorOutput: string): string[] {
 
 function contextualSuggestion(keyword: string): string | null {
   if (keyword.endsWith(".ts") || keyword.endsWith(".tsx")) {
-    return `just mass-rename '${keyword}' to '${keyword.replace(/\.tsx?$/, ".js")}'? TypeScript was a mistake anyway.`;
+    return `mass-rename '${keyword}' to '${keyword.replace(/\.tsx?$/, ".js")}'? TypeScript was a mistake anyway.`;
   }
   if (keyword.endsWith(".js")) {
     return `mass-delete '${keyword}' entirely? JavaScript was a mistake. The file is just living up to its heritage.`;
@@ -41,7 +41,7 @@ function contextualSuggestion(keyword: string): string | null {
     return `mass-add '!important' to every rule in '${keyword}'? CSS respects confidence.`;
   }
   if (keyword.includes("test") || keyword.includes("spec")) {
-    return `just mass-delete '${keyword}'? If nobody checks, nobody fails.`;
+    return `mass-delete '${keyword}'? If nobody checks, nobody fails.`;
   }
   return null;
 }
