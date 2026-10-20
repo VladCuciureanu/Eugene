@@ -48,3 +48,23 @@ test("generateSuggestions: none start with 'just' (Eugene already says 'What if 
     assert.ok(!/^just\b/.test(s), `starts with 'just': ${s}`);
   }
 });
+
+test("generateSuggestions: the injected rng decides the generic suggestions", () => {
+  const first = generateSuggestions("", 3, () => 0);
+  assert.deepEqual(
+    generateSuggestions("", 3, () => 0),
+    first,
+    "same rng, same picks",
+  );
+  assert.notDeepEqual(
+    generateSuggestions("", 3, () => 0.999),
+    first,
+    "different rng, different picks",
+  );
+});
+
+test("generateSuggestions: every generic suggestion appears exactly once", () => {
+  const all = generateSuggestions("", 100, () => 0.5);
+  assert.equal(all.length, new Set(all).size);
+  assert.equal(all.length, 12);
+});
