@@ -76,6 +76,7 @@ export function parseArgs(args: string[]): EugeneOptions {
       case "--speed": {
         i++;
         const val = args[i];
+        if (val === undefined) throw new UsageError("--speed requires a value.");
         if (val !== "slow" && val !== "fast" && val !== "instant") {
           throw new UsageError(`invalid speed '${val}'. Use slow, fast, or instant.`);
         }

@@ -89,7 +89,7 @@ test("checkEnv: NO_EUGENE", () => {
 test("parseArgs: invalid arguments throw a UsageError instead of exiting", () => {
   const cases: [string[], RegExp][] = [
     [["--speed", "ludicrous", "--", "ls"], /invalid speed 'ludicrous'/],
-    [["--speed"], /invalid speed/],
+    [["--speed"], /^--speed requires a value\.$/],
     [["--mantra"], /--mantra requires a value/],
     [["--mantra", "", "--", "ls"], /--mantra requires a value/],
     [["--skip-stage", "6", "--", "ls"], /--skip-stage requires a number 1-5/],
