@@ -3,12 +3,25 @@ import { checkEnv, type EugeneOptions, parseArgs, USAGE, UsageError } from "./cl
 import { canPromptOnStdio, eugeneSay, io, openTerminalInput } from "./prompt.ts";
 import {
   describeSpawnError,
+  isBrokenPipe,
   looksLikeError,
   type RunResult,
   readPipeInput,
   runCommand,
 } from "./runner.ts";
 import { runStagesInteractive, runStagesNonInteractive } from "./stages/mod.ts";
+
+/**
+ * What to exit with when a reader closes stdout or stderr early (`eugene ... | head`):
+ * 0 until the wrapped command has finished, then its exit code. `null` while the command
+ * runs, because runCommand handles that itself and waits for the command's exit code.
+ */
+let brokenPipeStatus: number | null = 0;
+
+function quitOnBrokenPipe(err: unknown) {
+  if (!isBrokenPipe(err)) throw err;
+  if (brokenPipeStatus !== null) process.exit(brokenPipeStatus);
+}
 
 async function main() {
   let opts: EugeneOptions;
@@ -59,17 +72,21 @@ async function main() {
   }
 
   let result: RunResult;
+  brokenPipeStatus = null;
   try {
     result = await runCommand(opts.command);
   } catch (err) {
     const { message, exitCode } = describeSpawnError(opts.command, err);
+    brokenPipeStatus = exitCode;
     console.error(message);
     process.exitCode = exitCode;
     return;
   }
+  brokenPipeStatus = result.exitCode;
 
-  // The command's output was already streamed live by runCommand.
-  if (result.exitCode === 0 || !grieve) {
+  // The command's output was already streamed live by runCommand. If nobody is reading
+  // any more, there is no one to grieve with either.
+  if (result.exitCode === 0 || !grieve || result.brokenPipe) {
     process.exitCode = result.exitCode;
     return;
   }
@@ -86,6 +103,8 @@ async function main() {
 }
 
 if (import.meta.main) {
+  process.stdout.on("error", quitOnBrokenPipe);
+  process.stderr.on("error", quitOnBrokenPipe);
   main().catch((err: unknown) => {
     // Unexpected failures get one line, like every other error, rather than a stack trace.
     console.error(`eugene: ${err instanceof Error ? err.message : String(err)}`);

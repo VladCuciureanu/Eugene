@@ -1,10 +1,13 @@
 import { spawn } from "node:child_process";
 import os from "node:os";
+import type { Readable } from "node:stream";
 
 export interface RunResult {
   exitCode: number;
   stdout: string;
   stderr: string;
+  /** A reader closed our stdout or stderr early (`eugene -- cmd | head`), so forwarding stopped. */
+  brokenPipe: boolean;
 }
 
 export interface RunOptions {
@@ -23,28 +26,51 @@ export function runCommand(command: string[], options: RunOptions = {}): Promise
   const [cmd, ...args] = command;
   const proc = spawn(cmd, args, { stdio: ["inherit", "pipe", "pipe"] });
 
+  let brokenPipe = false;
+  /** Copies `source` to `sink` while keeping every chunk. Returns a function that detaches it. */
+  const forward = (source: Readable, sink: NodeJS.WritableStream, chunks: Buffer[]) => {
+    let open = true;
+    const onError = (err: unknown) => {
+      if (!isBrokenPipe(err)) throw err;
+      open = false;
+      brokenPipe = true;
+      // As in a shell pipeline, the command's own writes now fail too, so it stops instead of
+      // running on with nobody reading.
+      source.destroy();
+    };
+    sink.on("error", onError);
+    source.on("data", (chunk: Buffer) => {
+      chunks.push(chunk);
+      if (open) sink.write(chunk);
+    });
+    return () => sink.off("error", onError);
+  };
+
   const stdout: Buffer[] = [];
   const stderr: Buffer[] = [];
-  proc.stdout.on("data", (chunk: Buffer) => {
-    stdout.push(chunk);
-    outSink.write(chunk);
-  });
-  proc.stderr.on("data", (chunk: Buffer) => {
-    stderr.push(chunk);
-    errSink.write(chunk);
-  });
+  const detach = [forward(proc.stdout, outSink, stdout), forward(proc.stderr, errSink, stderr)];
 
   return new Promise((resolve, reject) => {
-    proc.once("error", reject);
+    proc.once("error", (err) => {
+      for (const d of detach) d();
+      reject(err);
+    });
     proc.once("close", (code, signal) => {
+      for (const d of detach) d();
       const decoder = new TextDecoder();
       resolve({
         exitCode: code ?? 128 + (signal ? os.constants.signals[signal] : 0),
         stdout: decoder.decode(Buffer.concat(stdout)),
         stderr: decoder.decode(Buffer.concat(stderr)),
+        brokenPipe,
       });
     });
   });
+}
+
+/** True for the error a write gets once its reader has gone away. */
+export function isBrokenPipe(err: unknown): boolean {
+  return (err as NodeJS.ErrnoException | undefined)?.code === "EPIPE";
 }
 
 /**
