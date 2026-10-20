@@ -5,11 +5,8 @@ export async function blame(): Promise<void> {
 
   const response = await prompt();
 
-  if (
-    response.toLowerCase().includes("my") ||
-    response.toLowerCase().includes("mine") ||
-    response.toLowerCase().includes("me")
-  ) {
+  // Whole words only, so "James" or "Tommy" don't count as owning it.
+  if (/\b(me|my|mine|myself)\b/i.test(response)) {
     eugeneSay("Self-awareness. Noted.");
   } else if (response.trim() === "") {
     eugeneSay("Silence. Also noted.");
