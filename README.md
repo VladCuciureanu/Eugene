@@ -44,14 +44,19 @@ Eugene: You may now retry your command. Go in peace.
 
 ## Install
 
+Requires Node.js 24 or newer.
+
 ```bash
-deno install --allow-run --allow-env --allow-read -n eugene src/main.ts
+npm install
+npm link        # or: npm install -g .
 ```
 
-Or run directly:
+This builds `dist/` and puts an `eugene` command on your PATH.
+
+Or run directly from the repo:
 
 ```bash
-deno run --allow-run --allow-env --allow-read src/main.ts -- <your-command>
+node src/main.ts -- <your-command>
 ```
 
 ## Usage
@@ -115,14 +120,25 @@ Eugene asks you to repeat an affirmation before handing back control. Default: *
 
 When Eugene can't detect a TTY (e.g., in CI or piped output), it prints all 5 stages non-interactively to stderr. You still have to read them. With your eyes.
 
+In pipe mode (`some-command 2>&1 | eugene`) stdin is the piped output, so Eugene reads your answers straight from the terminal (`/dev/tty`, or the console on Windows). If there is no terminal, or stderr is redirected away from it, it falls back to non-interactive mode.
+
 ## Development
 
 ```bash
+npm install
+
 # Run tests
-deno task test
+npm test
+
+# Type-check
+npm run typecheck
+
+# Lint / format (Biome)
+npm run lint
+npm run format
 
 # Run directly
-deno task dev -- npm test
+npm run dev -- -- npm test
 ```
 
 ## Non-goals

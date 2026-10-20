@@ -1,36 +1,91 @@
+import { spawn } from "node:child_process";
+import os from "node:os";
+
 export interface RunResult {
   exitCode: number;
   stdout: string;
   stderr: string;
 }
 
-export async function runCommand(command: string[]): Promise<RunResult> {
+export interface RunOptions {
+  /** Receives the child's stdout as it arrives (default: process.stdout). */
+  stdout?: NodeJS.WritableStream;
+  /** Receives the child's stderr as it arrives (default: process.stderr). */
+  stderr?: NodeJS.WritableStream;
+}
+
+/**
+ * Runs `command`, streaming its output live to `options.stdout` / `options.stderr`
+ * while also capturing a copy for analysis once it exits.
+ */
+export function runCommand(command: string[], options: RunOptions = {}): Promise<RunResult> {
+  const { stdout: outSink = process.stdout, stderr: errSink = process.stderr } = options;
   const [cmd, ...args] = command;
-  const proc = new Deno.Command(cmd, {
-    args,
-    stdout: "piped",
-    stderr: "piped",
+  const proc = spawn(cmd, args, { stdio: ["inherit", "pipe", "pipe"] });
+
+  const stdout: Buffer[] = [];
+  const stderr: Buffer[] = [];
+  proc.stdout.on("data", (chunk: Buffer) => {
+    stdout.push(chunk);
+    outSink.write(chunk);
+  });
+  proc.stderr.on("data", (chunk: Buffer) => {
+    stderr.push(chunk);
+    errSink.write(chunk);
   });
 
-  const output = await proc.output();
-  const decoder = new TextDecoder();
+  return new Promise((resolve, reject) => {
+    proc.once("error", reject);
+    proc.once("close", (code, signal) => {
+      const decoder = new TextDecoder();
+      resolve({
+        exitCode: code ?? 128 + (signal ? os.constants.signals[signal] : 0),
+        stdout: decoder.decode(Buffer.concat(stdout)),
+        stderr: decoder.decode(Buffer.concat(stderr)),
+      });
+    });
+  });
+}
 
+/**
+ * Turns a failure to start `command` into a user-facing message and exit code
+ * (127 for "not found", 126 for "not executable", like a shell).
+ */
+export function describeSpawnError(
+  command: string[],
+  err: unknown,
+): { message: string; exitCode: number } {
+  const cmd = command[0];
+  const code = (err as NodeJS.ErrnoException | undefined)?.code;
+  const hint = "Run 'eugene --help' for usage.";
+  if (code === "ENOENT") {
+    return {
+      message: `eugene: command not found: ${cmd}
+${hint}`,
+      exitCode: 127,
+    };
+  }
+  if (code === "EACCES") {
+    return {
+      message: `eugene: permission denied: ${cmd}
+${hint}`,
+      exitCode: 126,
+    };
+  }
+  const reason = err instanceof Error ? err.message : String(err);
   return {
-    exitCode: output.code,
-    stdout: decoder.decode(output.stdout),
-    stderr: decoder.decode(output.stderr),
+    message: `eugene: failed to run ${cmd}: ${reason}
+${hint}`,
+    exitCode: 126,
   };
 }
 
 export async function readPipeInput(): Promise<string> {
   const decoder = new TextDecoder();
   const chunks: string[] = [];
-  const reader = Deno.stdin.readable.getReader();
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(decoder.decode(value, { stream: true }));
+  for await (const chunk of process.stdin) {
+    chunks.push(decoder.decode(chunk, { stream: true }));
   }
 
   return chunks.join("");

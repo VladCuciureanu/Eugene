@@ -1,59 +1,91 @@
-import { parseArgs, checkEnv } from "./cli.ts";
-import { runCommand, readPipeInput, looksLikeError } from "./runner.ts";
+#!/usr/bin/env node
+import { checkEnv, type EugeneOptions, parseArgs, USAGE, UsageError } from "./cli.ts";
+import { eugeneSay, io, openTerminalInput } from "./prompt.ts";
+import {
+  describeSpawnError,
+  looksLikeError,
+  type RunResult,
+  readPipeInput,
+  runCommand,
+} from "./runner.ts";
 import { runStagesInteractive, runStagesNonInteractive } from "./stages/mod.ts";
-import { eugeneSay, print } from "./prompt.ts";
 
 async function main() {
   const envCheck = checkEnv();
-  if (envCheck === "disable") Deno.exit(0);
+  if (envCheck === "disable") process.exit(0);
   if (envCheck === "disable-snark") {
     eugeneSay("Avoiding your emotions, I see.");
-    Deno.exit(0);
+    process.exitCode = 0;
+    return;
   }
 
-  const opts = parseArgs(Deno.args);
-  const isInteractive = Deno.stdin.isTerminal();
+  let opts: EugeneOptions;
+  try {
+    opts = parseArgs(process.argv.slice(2));
+  } catch (err) {
+    if (!(err instanceof UsageError)) throw err;
+    console.error(`eugene: ${err.message}`);
+    process.exitCode = 1;
+    return;
+  }
+  if (opts.help) {
+    console.log(USAGE);
+    return;
+  }
 
   if (opts.pipeMode) {
     const input = await readPipeInput();
 
     if (!looksLikeError(input)) {
-      Deno.stdout.writeSync(new TextEncoder().encode(input));
-      Deno.exit(0);
+      process.stdout.write(input);
+      process.exitCode = 0;
+      return;
     }
 
-    if (isInteractive) {
-      await runStagesInteractive(input, opts);
+    // stdin is the pipe we just drained, so answers have to come from the terminal itself.
+    // Only ask when Eugene's questions (on stderr) can actually be seen there.
+    const terminal = process.stderr.isTTY ? openTerminalInput() : null;
+    if (terminal) {
+      io.input = terminal;
+      try {
+        await runStagesInteractive(input, opts);
+      } finally {
+        terminal.destroy();
+      }
     } else {
       runStagesNonInteractive(input, opts);
     }
 
-    Deno.stdout.writeSync(new TextEncoder().encode(input));
-    Deno.exit(1);
+    process.stdout.write(input);
+    process.exitCode = 1;
+    return;
   }
 
-  const result = await runCommand(opts.command);
-
-  if (result.stdout) {
-    Deno.stdout.writeSync(new TextEncoder().encode(result.stdout));
+  let result: RunResult;
+  try {
+    result = await runCommand(opts.command);
+  } catch (err) {
+    const { message, exitCode } = describeSpawnError(opts.command, err);
+    console.error(message);
+    process.exitCode = exitCode;
+    return;
   }
-  if (result.stderr) {
-    Deno.stderr.writeSync(new TextEncoder().encode(result.stderr));
-  }
 
+  // The command's output was already streamed live by runCommand.
   if (result.exitCode === 0) {
-    Deno.exit(0);
+    process.exitCode = 0;
+    return;
   }
 
   const errorOutput = result.stderr || result.stdout;
 
-  if (isInteractive) {
+  if (process.stdin.isTTY) {
     await runStagesInteractive(errorOutput, opts);
   } else {
     runStagesNonInteractive(errorOutput, opts);
   }
 
-  Deno.exit(result.exitCode);
+  process.exitCode = result.exitCode;
 }
 
 if (import.meta.main) {

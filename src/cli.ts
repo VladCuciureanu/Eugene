@@ -4,16 +4,22 @@ export interface EugeneOptions {
   command: string[];
   hierarchical: boolean;
   speed: Speed;
-  mantra: string | null;
+  mantra: string;
   skipStages: number[];
   angerRoom: boolean;
   pipeMode: boolean;
+  /** Show usage and exit successfully instead of running anything. */
+  help: boolean;
+}
+
+/** Bad command-line arguments. The message is meant for the user, without a stack trace. */
+export class UsageError extends Error {
+  override name = "UsageError";
 }
 
 const DEFAULT_MANTRA = "The failure was not personal.";
 
-function printUsage(): never {
-  console.log(`eugene — process your failed commands through the 5 stages
+export const USAGE = `eugene — process your failed commands through the 5 stages
 
 Usage:
   eugene [options] -- <command> [args...]
@@ -29,25 +35,25 @@ Options:
 
 Environment:
   EUGENE_DISABLE=1   Disable Eugene entirely. For cowards.
-  NO_EUGENE=1        Alias for EUGENE_DISABLE.`);
-  Deno.exit(0);
-}
+  NO_EUGENE=1        Alias for EUGENE_DISABLE.`;
 
 export function checkEnv(): "run" | "disable" | "disable-snark" {
-  if (Deno.env.get("EUGENE_DISABLE") === "1") return "disable";
-  if (Deno.env.get("NO_EUGENE") === "1") return "disable-snark";
+  if (process.env.EUGENE_DISABLE === "1") return "disable";
+  if (process.env.NO_EUGENE === "1") return "disable-snark";
   return "run";
 }
 
+/** Parses Eugene's arguments. Throws UsageError for invalid ones; never exits the process. */
 export function parseArgs(args: string[]): EugeneOptions {
   const opts: EugeneOptions = {
     command: [],
     hierarchical: false,
     speed: "slow",
-    mantra: null,
+    mantra: DEFAULT_MANTRA,
     skipStages: [],
     angerRoom: false,
     pipeMode: false,
+    help: false,
   };
 
   let i = 0;
@@ -62,8 +68,8 @@ export function parseArgs(args: string[]): EugeneOptions {
     switch (arg) {
       case "-h":
       case "--help":
-        printUsage();
-        break;
+        opts.help = true;
+        return opts;
       case "--hierarchical":
         opts.hierarchical = true;
         break;
@@ -71,26 +77,21 @@ export function parseArgs(args: string[]): EugeneOptions {
         i++;
         const val = args[i];
         if (val !== "slow" && val !== "fast" && val !== "instant") {
-          console.error(`eugene: invalid speed '${val}'. Use slow, fast, or instant.`);
-          Deno.exit(1);
+          throw new UsageError(`invalid speed '${val}'. Use slow, fast, or instant.`);
         }
         opts.speed = val;
         break;
       }
       case "--mantra":
         i++;
+        if (!args[i]) throw new UsageError("--mantra requires a value.");
         opts.mantra = args[i];
-        if (!opts.mantra) {
-          console.error("eugene: --mantra requires a value.");
-          Deno.exit(1);
-        }
         break;
       case "--skip-stage": {
         i++;
-        const n = parseInt(args[i]);
-        if (isNaN(n) || n < 1 || n > 5) {
-          console.error("eugene: --skip-stage requires a number 1-5.");
-          Deno.exit(1);
+        const n = Number.parseInt(args[i], 10);
+        if (Number.isNaN(n) || n < 1 || n > 5) {
+          throw new UsageError("--skip-stage requires a number 1-5.");
         }
         opts.skipStages.push(n);
         break;
@@ -99,22 +100,15 @@ export function parseArgs(args: string[]): EugeneOptions {
         opts.angerRoom = true;
         break;
       default:
-        console.error(`eugene: unknown option '${arg}'`);
-        Deno.exit(1);
+        throw new UsageError(`unknown option '${arg}'`);
     }
     i++;
   }
 
-  if (opts.command.length === 0 && Deno.stdin.isTerminal()) {
-    printUsage();
-  }
-
   if (opts.command.length === 0) {
-    opts.pipeMode = true;
-  }
-
-  if (!opts.mantra) {
-    opts.mantra = DEFAULT_MANTRA;
+    // Nothing to run and nothing piped in: the user needs the usage text.
+    if (process.stdin.isTTY) opts.help = true;
+    else opts.pipeMode = true;
   }
 
   return opts;

@@ -6,11 +6,11 @@ const GENERIC_SUGGESTIONS = [
   "mass-delete node_modules and pray? It's worked before.",
   "mass-convert it to a microservice? That'll definitely simplify things.",
   "mass-revert to the last commit that worked and pretend today never happened?",
-  "just mass-add '// @ts-ignore' above every line?",
+  "mass-add '// @ts-ignore' above every line?",
   "mass-replace your build tool with a shell script that just echoes 'success'?",
   "mass-turn it off and on again? The whole computer.",
   "mass-switch to a language without errors? I hear HTML is nice.",
-  "just mass-copy the answer from Stack Overflow without reading it?",
+  "mass-copy the answer from Stack Overflow without reading it?",
 ];
 
 function extractKeywords(errorOutput: string): string[] {
@@ -29,7 +29,7 @@ function extractKeywords(errorOutput: string): string[] {
 
 function contextualSuggestion(keyword: string): string | null {
   if (keyword.endsWith(".ts") || keyword.endsWith(".tsx")) {
-    return `just mass-rename '${keyword}' to '${keyword.replace(/\.tsx?$/, ".js")}'? TypeScript was a mistake anyway.`;
+    return `mass-rename '${keyword}' to '${keyword.replace(/\.tsx?$/, ".js")}'? TypeScript was a mistake anyway.`;
   }
   if (keyword.endsWith(".js")) {
     return `mass-delete '${keyword}' entirely? JavaScript was a mistake. The file is just living up to its heritage.`;
@@ -41,12 +41,30 @@ function contextualSuggestion(keyword: string): string | null {
     return `mass-add '!important' to every rule in '${keyword}'? CSS respects confidence.`;
   }
   if (keyword.includes("test") || keyword.includes("spec")) {
-    return `just mass-delete '${keyword}'? If nobody checks, nobody fails.`;
+    return `mass-delete '${keyword}'? If nobody checks, nobody fails.`;
   }
   return null;
 }
 
-export function generateSuggestions(errorOutput: string, count = 3): string[] {
+/** Returns a shuffled copy of `items` (Fisher-Yates), using `random` in [0, 1). */
+function shuffle<T>(items: readonly T[], random: () => number): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
+ * Picks `count` suggestions: ones about files named in the error first, then generic ones in
+ * an order chosen by `random`.
+ */
+export function generateSuggestions(
+  errorOutput: string,
+  count = 3,
+  random: () => number = Math.random,
+): string[] {
   const suggestions: string[] = [];
   const keywords = extractKeywords(errorOutput);
 
@@ -56,8 +74,7 @@ export function generateSuggestions(errorOutput: string, count = 3): string[] {
     if (s) suggestions.push(s);
   }
 
-  const shuffled = [...GENERIC_SUGGESTIONS].sort(() => Math.random() - 0.5);
-  for (const s of shuffled) {
+  for (const s of shuffle(GENERIC_SUGGESTIONS, random)) {
     if (suggestions.length >= count) break;
     suggestions.push(s);
   }
