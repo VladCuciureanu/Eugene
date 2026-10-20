@@ -1,3 +1,4 @@
+import readline from "node:readline";
 import type { Speed } from "./cli.ts";
 
 // ANSI color helpers
@@ -17,8 +18,24 @@ export const style = {
   bold: (s: string) => `${BOLD}${s}${RESET}`,
 };
 
+export interface Io {
+  /** Where answers to prompts are read from, one line per answer. */
+  input: NodeJS.ReadableStream;
+  /** Where Eugene talks (stderr, so it never mixes with the command's stdout). */
+  output: NodeJS.WritableStream;
+  /** Source of randomness, e.g. for shuffling suggestions. Returns [0, 1). */
+  random: () => number;
+}
+
+/** Eugene's I/O. Replace fields to redirect it (tests, or a terminal opened for pipe mode). */
+export const io: Io = {
+  input: process.stdin,
+  output: process.stderr,
+  random: Math.random,
+};
+
 export function print(msg: string) {
-  process.stderr.write(`${msg}\n`);
+  io.output.write(`${msg}\n`);
 }
 
 export function eugeneSay(msg: string) {
@@ -60,24 +77,69 @@ export async function timedPrint(msg: string, pauseMs: number, speed: Speed, sig
   eugeneDim(msg);
 }
 
-const decoder = new TextDecoder();
+/** Reads answers one line at a time, queueing lines that arrive before they are asked for. */
+class LineReader {
+  readonly input: NodeJS.ReadableStream;
+  private readonly rl: readline.Interface;
+  private readonly lines: string[] = [];
+  private readonly waiters: ((line: string | null) => void)[] = [];
+  private ended = false;
 
-export function prompt(prefix = "> "): Promise<string> {
-  process.stderr.write(style.dim(prefix));
+  constructor(input: NodeJS.ReadableStream) {
+    this.input = input;
+    this.rl = readline.createInterface({ input, terminal: false, crlfDelay: Infinity });
+    this.rl.on("line", (line) => {
+      const waiter = this.waiters.shift();
+      if (waiter) waiter(line);
+      else this.lines.push(line);
+    });
+    this.rl.on("close", () => {
+      this.ended = true;
+      for (const waiter of this.waiters.splice(0)) waiter(null);
+    });
+  }
 
-  const stdin = process.stdin;
-  if (stdin.readableEnded) return Promise.resolve("");
-  return new Promise((resolve) => {
-    const finish = (text: string) => {
-      stdin.off("data", onData);
-      stdin.off("end", onEnd);
-      stdin.pause();
-      resolve(text);
-    };
-    const onData = (chunk: Buffer) => finish(decoder.decode(chunk).trim());
-    const onEnd = () => finish("");
-    stdin.on("data", onData);
-    stdin.once("end", onEnd);
-    stdin.resume();
-  });
+  /** The next line, or null once the input has ended. */
+  next(): Promise<string | null> {
+    const line = this.lines.shift();
+    if (line !== undefined) return Promise.resolve(line);
+    if (this.ended) return Promise.resolve(null);
+    return new Promise((resolve) => this.waiters.push(resolve));
+  }
+
+  get exhausted(): boolean {
+    return this.ended && this.lines.length === 0;
+  }
+
+  close(): void {
+    this.rl.close();
+  }
+}
+
+let reader: LineReader | null = null;
+
+function currentReader(): LineReader {
+  if (reader?.input !== io.input) {
+    reader?.close();
+    reader = new LineReader(io.input);
+  }
+  return reader;
+}
+
+/** Asks for one line of input. Resolves to "" once the input has ended. */
+export async function prompt(prefix = "> "): Promise<string> {
+  io.output.write(style.dim(prefix));
+  const line = await currentReader().next();
+  return line?.trim() ?? "";
+}
+
+/** True once the input has ended and every line has been read; further prompts return "". */
+export function inputEnded(): boolean {
+  return currentReader().exhausted;
+}
+
+/** Stops reading from the current input so the process can exit. */
+export function closeInput(): void {
+  reader?.close();
+  reader = null;
 }

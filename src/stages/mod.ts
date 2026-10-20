@@ -1,5 +1,5 @@
 import type { EugeneOptions } from "../cli.ts";
-import { eugeneSay, print } from "../prompt.ts";
+import { closeInput, eugeneSay, print } from "../prompt.ts";
 import { acceptance, acceptanceNonInteractive } from "./acceptance.ts";
 import { anger, angerNonInteractive } from "./anger.ts";
 import { bargaining, bargainingNonInteractive } from "./bargaining.ts";
@@ -92,6 +92,7 @@ export async function runStagesInteractive(
     print("");
   } finally {
     process.off("SIGINT", sigintHandler);
+    closeInput();
   }
 }
 
