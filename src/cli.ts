@@ -54,8 +54,34 @@ const OPTIONS = {
   "anger-room": { type: "boolean" },
 } as const;
 
+/** Quotes `text` for a POSIX shell, unless it is plainly safe as is. */
+function shellQuote(text: string): string {
+  return /^[\w@%+=:,./-]+$/.test(text) ? text : `'${text.replaceAll("'", "'\\''")}'`;
+}
+
+/**
+ * Finds the option whose separate value starts with "-", which strict parsing rejects as
+ * ambiguous. Lenient parsing takes that value as the option's argument, so the token shows it.
+ */
+function ambiguousValue(args: string[]): string | undefined {
+  const { tokens } = util.parseArgs({
+    args,
+    options: OPTIONS,
+    strict: false,
+    allowPositionals: true,
+    tokens: true,
+  });
+  for (const t of tokens) {
+    if (t.kind === "option-terminator") break;
+    if (t.kind === "option" && !t.inlineValue && t.value?.startsWith("-")) {
+      return `option '${t.rawName}' got '${t.value}', which looks like an option; write ${shellQuote(`${t.rawName}=${t.value}`)}`;
+    }
+  }
+  return undefined;
+}
+
 /** Rewords node:util's parse errors as one short line. */
-function usageError(err: unknown): UsageError {
+function usageError(err: unknown, args: string[]): UsageError {
   const { code, message } = err as NodeJS.ErrnoException;
   const unknown = /^Unknown option '([^']+)'/.exec(message);
   if (code === "ERR_PARSE_ARGS_UNKNOWN_OPTION" && unknown) {
@@ -65,7 +91,15 @@ function usageError(err: unknown): UsageError {
   if (code === "ERR_PARSE_ARGS_INVALID_OPTION_VALUE" && missing) {
     return new UsageError(`${missing[1]} requires a value.`);
   }
-  if (code?.startsWith("ERR_PARSE_ARGS_")) return new UsageError(message.split("\n")[0]);
+  if (code === "ERR_PARSE_ARGS_INVALID_OPTION_VALUE" && /argument is ambiguous/.test(message)) {
+    const ambiguous = ambiguousValue(args);
+    if (ambiguous) return new UsageError(ambiguous);
+  }
+  if (code?.startsWith("ERR_PARSE_ARGS_")) {
+    // Anything else: node's first line only, without the stray ".." some messages end with.
+    const first = (message.split("\n")[0] ?? "").trim().replace(/\.{2,}$/, ".");
+    return new UsageError(first);
+  }
   throw err;
 }
 
@@ -79,7 +113,7 @@ function parse(args: string[]) {
       tokens: true,
     });
   } catch (err) {
-    throw usageError(err);
+    throw usageError(err, args);
   }
 }
 
