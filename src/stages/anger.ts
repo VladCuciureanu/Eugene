@@ -1,4 +1,4 @@
-import { eugeneSay, prompt } from "../prompt.ts";
+import { eugeneSay, inputEnded, prompt } from "../prompt.ts";
 import { isCalm } from "../sentiment.ts";
 
 const EMPATHY_RESPONSES = [
@@ -24,10 +24,10 @@ export async function anger(angerRoom: boolean): Promise<void> {
     messages++;
 
     if (angerRoom) {
-      if (
-        response.toLowerCase().trim() === "i'm done" ||
-        response.toLowerCase().trim() === "im done"
-      ) {
+      const done =
+        response.toLowerCase().trim() === "i'm done" || response.toLowerCase().trim() === "im done";
+      // Out of input (Ctrl+D) counts as done; otherwise the room would never let you leave.
+      if (done || inputEnded()) {
         eugeneSay("Good. You've processed it.");
         return;
       }
