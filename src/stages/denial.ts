@@ -1,11 +1,7 @@
 import { eugeneSay, prompt } from "../prompt.ts";
 import { isNegation } from "../sentiment.ts";
 
-const DENIAL_RESPONSES = [
-  "I understand. But it did happen.",
-  "The logs don't lie.",
-  "I know it's hard to accept.",
-];
+const DENIAL_RESPONSES = ["I understand. But it did happen.", "The logs don't lie."];
 
 const FORCED_MOVE = "I admire your commitment to denial. But we need to move on.";
 
@@ -21,22 +17,15 @@ export async function denial(errorOutput: string): Promise<void> {
   eugeneSay("");
   eugeneSay("Do you accept that this has happened?");
 
-  let denials = 0;
-  const maxDenials = 3;
-
-  while (denials < maxDenials) {
-    const response = await prompt();
-    if (!isNegation(response)) {
+  // One reply per denial; the denial after the last reply gets you moved on anyway.
+  for (const reply of DENIAL_RESPONSES) {
+    if (!isNegation(await prompt())) {
       eugeneSay("Let's move on.");
       return;
     }
-    denials++;
-    if (denials >= maxDenials) {
-      eugeneSay(FORCED_MOVE);
-      return;
-    }
-    eugeneSay(DENIAL_RESPONSES[denials - 1] ?? DENIAL_RESPONSES[0]);
+    eugeneSay(reply);
   }
+  eugeneSay(isNegation(await prompt()) ? FORCED_MOVE : "Let's move on.");
 }
 
 export function denialNonInteractive(errorOutput: string): void {
