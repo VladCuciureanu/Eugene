@@ -7,12 +7,68 @@ import { blame, blameNonInteractive } from "./blame.ts";
 import { denial, denialNonInteractive } from "./denial.ts";
 import { depression, depressionNonInteractive } from "./depression.ts";
 
-const STAGE_NAMES = ["denial", "anger", "bargaining", "depression", "acceptance"];
+interface StageContext {
+  errorOutput: string;
+  opts: EugeneOptions;
+  /** Aborted when the user presses Ctrl+C during a stage that allows it. */
+  signal?: AbortSignal;
+}
 
-function shouldSkip(stageNum: number, skipStages: number[]): boolean {
-  if (!skipStages.includes(stageNum)) return false;
-  eugeneSay(`Skipping ${STAGE_NAMES[stageNum - 1]}. Grief counselors do not recommend this.`);
-  return true;
+interface Stage {
+  name: string;
+  /** Whether Ctrl+C skips the rest of this stage (otherwise it is refused). */
+  ctrlCSkips?: boolean;
+  interactive(ctx: StageContext): Promise<void>;
+  nonInteractive(ctx: StageContext): void;
+}
+
+/** The five stages, in order. `--skip-stage n` refers to their position here. */
+const STAGES: Stage[] = [
+  {
+    name: "denial",
+    interactive: ({ errorOutput }) => denial(errorOutput),
+    nonInteractive: ({ errorOutput }) => denialNonInteractive(errorOutput),
+  },
+  {
+    name: "anger",
+    interactive: ({ opts }) => anger(opts.angerRoom),
+    nonInteractive: () => angerNonInteractive(),
+  },
+  {
+    name: "bargaining",
+    interactive: ({ errorOutput }) => bargaining(errorOutput),
+    nonInteractive: ({ errorOutput }) => bargainingNonInteractive(errorOutput),
+  },
+  {
+    name: "depression",
+    ctrlCSkips: true,
+    interactive: ({ opts, signal }) => depression(opts.speed, signal),
+    nonInteractive: () => depressionNonInteractive(),
+  },
+  {
+    name: "acceptance",
+    interactive: ({ opts }) => acceptance(opts.mantra),
+    nonInteractive: ({ opts }) => acceptanceNonInteractive(opts.mantra),
+  },
+];
+
+/** The bonus sixth stage for `--hierarchical`. It cannot be skipped. */
+const BLAME: Stage = {
+  name: "blame",
+  interactive: () => blame(),
+  nonInteractive: () => blameNonInteractive(),
+};
+
+/** Yields the stages to run, announcing skipped ones as they come up. */
+function* stagesToRun(opts: EugeneOptions): Generator<Stage> {
+  for (const [index, stage] of STAGES.entries()) {
+    if (opts.skipStages.includes(index + 1)) {
+      eugeneSay(`Skipping ${stage.name}. Grief counselors do not recommend this.`);
+      continue;
+    }
+    yield stage;
+  }
+  if (opts.hierarchical) yield BLAME;
 }
 
 export interface SigintController {
@@ -60,33 +116,17 @@ export async function runStagesInteractive(
   try {
     print("");
 
-    if (!shouldSkip(1, opts.skipStages)) {
-      await denial(errorOutput);
-    }
-
-    if (!shouldSkip(2, opts.skipStages)) {
-      await anger(opts.angerRoom);
-    }
-
-    if (!shouldSkip(3, opts.skipStages)) {
-      await bargaining(errorOutput);
-    }
-
-    if (!shouldSkip(4, opts.skipStages)) {
+    for (const stage of stagesToRun(opts)) {
+      if (!stage.ctrlCSkips) {
+        await stage.interactive({ errorOutput, opts });
+        continue;
+      }
       const signal = sigint.beginSkippable();
       try {
-        await depression(opts.speed, signal);
+        await stage.interactive({ errorOutput, opts, signal });
       } finally {
         sigint.endSkippable();
       }
-    }
-
-    if (!shouldSkip(5, opts.skipStages)) {
-      await acceptance(opts.mantra);
-    }
-
-    if (opts.hierarchical) {
-      await blame();
     }
 
     print("");
@@ -99,12 +139,9 @@ export async function runStagesInteractive(
 export function runStagesNonInteractive(errorOutput: string, opts: EugeneOptions): void {
   print("");
 
-  if (!shouldSkip(1, opts.skipStages)) denialNonInteractive(errorOutput);
-  if (!shouldSkip(2, opts.skipStages)) angerNonInteractive();
-  if (!shouldSkip(3, opts.skipStages)) bargainingNonInteractive(errorOutput);
-  if (!shouldSkip(4, opts.skipStages)) depressionNonInteractive();
-  if (!shouldSkip(5, opts.skipStages)) acceptanceNonInteractive(opts.mantra);
-  if (opts.hierarchical) blameNonInteractive();
+  for (const stage of stagesToRun(opts)) {
+    stage.nonInteractive({ errorOutput, opts });
+  }
 
   print("");
 }
