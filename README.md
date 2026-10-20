@@ -95,12 +95,13 @@ Invalid options print an error to stderr and exit 1.
 ## Development
 
 ```bash
-npm test              # node --test
+npm test              # node --test (test/**/*.test.ts)
+npm run check         # biome check, typecheck and tests
 npm run typecheck     # tsc
 npm run lint          # biome lint
-npm run format        # biome format --write
+npm run format        # biome check --write
 npm run build         # tsc to dist/
-npm run dev -- -- npm test
+npm run dev -- -- npm test   # node --watch
 ```
 
 ## Non-goals
