@@ -38,13 +38,3 @@ test("bargainingNonInteractive: handles empty error output", async () => {
     assert.equal(s.output().split("What if you just ").length - 1, 2);
   });
 });
-
-test("bargainingNonInteractive: uses Eugene's rng to pick suggestions", async () => {
-  const run = (random: () => number) =>
-    withIo({ random }, (s) => {
-      bargainingNonInteractive("");
-      return s.output();
-    });
-  assert.equal(await run(() => 0), await run(() => 0));
-  assert.notEqual(await run(() => 0), await run(() => 0.999));
-});

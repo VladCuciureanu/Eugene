@@ -28,10 +28,10 @@ export interface Scripted {
 
 /**
  * Runs `fn` with Eugene's I/O redirected: `answers` are typed as input lines (the input
- * stays open unless `end` is set), output is captured, and `random` replaces Math.random.
+ * stays open unless `end` is set) and output is captured.
  */
 export async function withIo<T>(
-  options: { answers?: string[]; end?: boolean; random?: () => number },
+  options: { answers?: string[]; end?: boolean },
   fn: (scripted: Scripted) => Promise<T> | T,
 ): Promise<T> {
   const saved: Io = { ...io };
@@ -46,7 +46,6 @@ export async function withIo<T>(
   };
   io.input = input;
   io.output = output;
-  io.random = options.random ?? (() => 0);
   scripted.type(...(options.answers ?? []));
   if (options.end) scripted.end();
   try {

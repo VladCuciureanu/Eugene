@@ -1,8 +1,8 @@
-import { eugeneSay, io, prompt } from "../prompt.ts";
+import { eugeneSay, prompt } from "../prompt.ts";
 import { generateSuggestions } from "../suggestions.ts";
 
 export async function bargaining(errorOutput: string): Promise<void> {
-  const suggestions = generateSuggestions(errorOutput, 3, io.random);
+  const suggestions = generateSuggestions(errorOutput, 3);
 
   for (const suggestion of suggestions) {
     eugeneSay(`What if you just ${suggestion}`);
@@ -13,7 +13,7 @@ export async function bargaining(errorOutput: string): Promise<void> {
 }
 
 export function bargainingNonInteractive(errorOutput: string): void {
-  const suggestions = generateSuggestions(errorOutput, 2, io.random);
+  const suggestions = generateSuggestions(errorOutput, 2);
   for (const suggestion of suggestions) {
     eugeneSay(`What if you just ${suggestion}`);
   }

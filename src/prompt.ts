@@ -21,15 +21,12 @@ export interface Io {
   input: NodeJS.ReadableStream;
   /** Where Eugene talks (stderr, so it never mixes with the command's stdout). */
   output: NodeJS.WritableStream;
-  /** Source of randomness, e.g. for shuffling suggestions. Returns [0, 1). */
-  random: () => number;
 }
 
 /** Eugene's I/O. Replace fields to redirect it (tests, or a terminal opened for pipe mode). */
 export const io: Io = {
   input: process.stdin,
   output: process.stderr,
-  random: Math.random,
 };
 
 export function print(msg: string) {
