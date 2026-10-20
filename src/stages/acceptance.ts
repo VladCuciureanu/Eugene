@@ -1,26 +1,28 @@
-import { eugeneSay, eugeneWarm, prompt } from "../prompt.ts";
+import { eugeneSay, eugeneWarm, inputEnded, prompt } from "../prompt.ts";
+import { isNegation } from "../sentiment.ts";
+
+/** Lowercases and drops punctuation so only the words (and numbers) have to match. */
+function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export async function acceptance(mantra: string): Promise<void> {
   eugeneSay("Are you ready to try again?");
-  await prompt();
+  while (isNegation(await prompt()) && !inputEnded()) {
+    eugeneSay("Take your time. Healing isn't linear.");
+    eugeneSay("Are you ready to try again?");
+  }
 
   eugeneSay(`Say it with me: "${mantra}"`);
 
-  while (true) {
-    const response = await prompt();
-    const normalized = response
-      .toLowerCase()
-      .replace(/[^a-z\s]/g, "")
-      .trim();
-    const mantraNormalized = mantra
-      .toLowerCase()
-      .replace(/[^a-z\s]/g, "")
-      .trim();
-
-    if (
-      normalized.includes(mantraNormalized) ||
-      normalized.length > mantraNormalized.length * 0.5
-    ) {
+  const expected = normalize(mantra);
+  while (normalize(await prompt()) !== expected) {
+    if (inputEnded()) {
+      eugeneSay("Silence. I'll take that as a yes.");
       break;
     }
     eugeneSay("Try again. The full mantra.");
