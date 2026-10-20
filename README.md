@@ -71,7 +71,7 @@ some-command 2>&1 | eugene
 
 | Environment variable | Effect |
 |---|---|
-| `EUGENE_DISABLE=1` | Exit 0 immediately. The command is not run. For cowards. |
+| `EUGENE_DISABLE=1` | Skip the stages. The command still runs and Eugene exits with its exit code; in pipe mode the input is passed through and Eugene exits 0. For cowards. |
 | `NO_EUGENE=1` | Same, but Eugene says "Avoiding your emotions, I see." first. |
 
 ### The stages

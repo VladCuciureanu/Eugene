@@ -11,14 +11,6 @@ import {
 import { runStagesInteractive, runStagesNonInteractive } from "./stages/mod.ts";
 
 async function main() {
-  const envCheck = checkEnv();
-  if (envCheck === "disable") process.exit(0);
-  if (envCheck === "disable-snark") {
-    eugeneSay("Avoiding your emotions, I see.");
-    process.exitCode = 0;
-    return;
-  }
-
   let opts: EugeneOptions;
   try {
     opts = parseArgs(process.argv.slice(2));
@@ -33,10 +25,15 @@ async function main() {
     return;
   }
 
+  // Disabled, Eugene still runs the command (or passes the pipe on), just without the grief.
+  const envCheck = checkEnv();
+  if (envCheck === "disable-snark") eugeneSay("Avoiding your emotions, I see.");
+  const grieve = envCheck === "run";
+
   if (opts.pipeMode) {
     const input = await readPipeInput();
 
-    if (!looksLikeError(input)) {
+    if (!grieve || !looksLikeError(input)) {
       process.stdout.write(input);
       process.exitCode = 0;
       return;
@@ -72,8 +69,8 @@ async function main() {
   }
 
   // The command's output was already streamed live by runCommand.
-  if (result.exitCode === 0) {
-    process.exitCode = 0;
+  if (result.exitCode === 0 || !grieve) {
+    process.exitCode = result.exitCode;
     return;
   }
 

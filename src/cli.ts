@@ -36,8 +36,8 @@ Options:
   -h, --help         Show this help
 
 Environment:
-  EUGENE_DISABLE=1   Disable Eugene entirely. For cowards.
-  NO_EUGENE=1        Alias for EUGENE_DISABLE.`;
+  EUGENE_DISABLE=1   Run the command without the stages. For cowards.
+  NO_EUGENE=1        Same, with a remark.`;
 
 export function checkEnv(): "run" | "disable" | "disable-snark" {
   if (process.env.EUGENE_DISABLE === "1") return "disable";

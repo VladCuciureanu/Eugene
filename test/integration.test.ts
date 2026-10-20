@@ -43,19 +43,30 @@ test("integration: failed command triggers Eugene (non-interactive)", async () =
   assert.ok(result.stderr.includes("boom"), "Should contain error output");
 });
 
-test("integration: EUGENE_DISABLE skips everything", async () => {
-  const result = await runEugene(["--", "sh", "-c", "exit 1"], {
+test("integration: EUGENE_DISABLE runs the command without the stages", async () => {
+  const result = await runEugene(["--", "sh", "-c", "echo out; echo 'Error: boom' >&2; exit 3"], {
     EUGENE_DISABLE: "1",
   });
-  assert.deepEqual(result.code, 0);
+  assert.equal(result.code, 3, "the command's exit code is kept");
+  assert.equal(result.stdout, "out\n", "the command ran");
+  assert.equal(result.stderr, "Error: boom\n", "no stages");
 });
 
-test("integration: NO_EUGENE prints snark", async () => {
-  const result = await runEugene(["--", "sh", "-c", "exit 1"], {
+test("integration: NO_EUGENE prints snark and runs the command without the stages", async () => {
+  const result = await runEugene(["--", "sh", "-c", "echo out; exit 2"], {
     NO_EUGENE: "1",
   });
-  assert.deepEqual(result.code, 0);
+  assert.equal(result.code, 2);
+  assert.equal(result.stdout, "out\n");
   assert.ok(result.stderr.includes("Avoiding your emotions"), "Should print snark");
+  assert.ok(!result.stderr.includes("Go in peace."), "no stages");
+});
+
+test("integration: EUGENE_DISABLE passes piped errors through without the stages", async () => {
+  const result = await runEugene([], { EUGENE_DISABLE: "1" }, "Error: piped boom\n");
+  assert.equal(result.code, 0);
+  assert.equal(result.stdout, "Error: piped boom\n");
+  assert.equal(result.stderr, "");
 });
 
 test("integration: skip-stage works", async () => {
