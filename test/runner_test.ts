@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { runCommand, looksLikeError, describeSpawnError } from "../src/runner.ts";
+import { describeSpawnError, looksLikeError, runCommand } from "../src/runner.ts";
 
 test("runCommand: successful command", async () => {
   const result = await runCommand(["echo", "hello"]);

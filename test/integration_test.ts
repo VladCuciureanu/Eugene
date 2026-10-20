@@ -5,7 +5,10 @@ import { fileURLToPath } from "node:url";
 
 const MAIN = fileURLToPath(new URL("../src/main.ts", import.meta.url));
 
-async function runEugene(args: string[], env?: Record<string, string>): Promise<{
+async function runEugene(
+  args: string[],
+  env?: Record<string, string>,
+): Promise<{
   code: number;
   stdout: string;
   stderr: string;
@@ -55,17 +58,25 @@ test("integration: NO_EUGENE prints snark", async () => {
 
 test("integration: skip-stage works", async () => {
   const result = await runEugene([
-    "--skip-stage", "1",
-    "--skip-stage", "2",
-    "--skip-stage", "3",
-    "--skip-stage", "4",
-    "--skip-stage", "5",
-    "--", "sh", "-c", "echo 'Error: oops' >&2; exit 1",
+    "--skip-stage",
+    "1",
+    "--skip-stage",
+    "2",
+    "--skip-stage",
+    "3",
+    "--skip-stage",
+    "4",
+    "--skip-stage",
+    "5",
+    "--",
+    "sh",
+    "-c",
+    "echo 'Error: oops' >&2; exit 1",
   ]);
   assert.deepEqual(result.code, 1);
   assert.ok(
     result.stderr.includes("Skipping") || result.stderr.includes("counselors"),
-    "Should mention skipping. Got: " + result.stderr.slice(0, 500)
+    `Should mention skipping. Got: ${result.stderr.slice(0, 500)}`,
   );
 });
 
@@ -74,7 +85,7 @@ test("integration: unknown command prints a friendly error without a stack trace
   assert.deepEqual(result.code, 127);
   assert.ok(
     result.stderr.includes("command not found: eugene-no-such-command-xyz"),
-    "Should explain the command was not found"
+    "Should explain the command was not found",
   );
   assert.ok(!/\n\s+at /.test(result.stderr), "Should not print a stack trace");
   assert.ok(!result.stderr.includes("ErrnoException"), "Should not leak internals");

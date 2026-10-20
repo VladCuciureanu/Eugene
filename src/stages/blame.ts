@@ -5,7 +5,11 @@ export async function blame(): Promise<void> {
 
   const response = await prompt();
 
-  if (response.toLowerCase().includes("my") || response.toLowerCase().includes("mine") || response.toLowerCase().includes("me")) {
+  if (
+    response.toLowerCase().includes("my") ||
+    response.toLowerCase().includes("mine") ||
+    response.toLowerCase().includes("me")
+  ) {
     eugeneSay("Self-awareness. Noted.");
   } else if (response.trim() === "") {
     eugeneSay("Silence. Also noted.");

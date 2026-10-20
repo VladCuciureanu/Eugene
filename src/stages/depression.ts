@@ -1,5 +1,5 @@
 import type { Speed } from "../cli.ts";
-import { eugeneDim, timedPrint, delay } from "../prompt.ts";
+import { delay, eugeneDim, timedPrint } from "../prompt.ts";
 
 /** Runs the depression stage. Aborting `signal` (e.g. on Ctrl+C) skips the rest of it. */
 export async function depression(speed: Speed, signal?: AbortSignal): Promise<void> {

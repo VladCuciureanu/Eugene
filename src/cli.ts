@@ -87,8 +87,8 @@ export function parseArgs(args: string[]): EugeneOptions {
         break;
       case "--skip-stage": {
         i++;
-        const n = parseInt(args[i]);
-        if (isNaN(n) || n < 1 || n > 5) {
+        const n = Number.parseInt(args[i], 10);
+        if (Number.isNaN(n) || n < 1 || n > 5) {
           console.error("eugene: --skip-stage requires a number 1-5.");
           process.exit(1);
         }

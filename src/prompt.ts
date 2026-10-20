@@ -18,7 +18,7 @@ export const style = {
 };
 
 export function print(msg: string) {
-  process.stderr.write(msg + "\n");
+  process.stderr.write(`${msg}\n`);
 }
 
 export function eugeneSay(msg: string) {
@@ -54,12 +54,7 @@ export function delay(ms: number, speed: Speed, signal?: AbortSignal): Promise<v
   });
 }
 
-export async function timedPrint(
-  msg: string,
-  pauseMs: number,
-  speed: Speed,
-  signal?: AbortSignal
-) {
+export async function timedPrint(msg: string, pauseMs: number, speed: Speed, signal?: AbortSignal) {
   await delay(pauseMs, speed, signal);
   if (signal?.aborted) return;
   eugeneDim(msg);

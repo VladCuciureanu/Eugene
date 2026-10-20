@@ -20,9 +20,7 @@ test("generateSuggestions: contextual for .ts files", () => {
 
 test("generateSuggestions: contextual for test files", () => {
   const suggestions = generateSuggestions("FAIL test/auth_test.ts", 3);
-  const hasContextual = suggestions.some(
-    (s) => s.includes("test") || s.includes("nobody checks")
-  );
+  const hasContextual = suggestions.some((s) => s.includes("test") || s.includes("nobody checks"));
   assert.ok(hasContextual, "Should include contextual suggestion for test file");
 });
 

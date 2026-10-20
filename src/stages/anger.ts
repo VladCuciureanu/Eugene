@@ -24,7 +24,10 @@ export async function anger(angerRoom: boolean): Promise<void> {
     messages++;
 
     if (angerRoom) {
-      if (response.toLowerCase().trim() === "i'm done" || response.toLowerCase().trim() === "im done") {
+      if (
+        response.toLowerCase().trim() === "i'm done" ||
+        response.toLowerCase().trim() === "im done"
+      ) {
         eugeneSay("Good. You've processed it.");
         return;
       }

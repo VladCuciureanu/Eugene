@@ -8,10 +8,19 @@ export async function acceptance(mantra: string): Promise<void> {
 
   while (true) {
     const response = await prompt();
-    const normalized = response.toLowerCase().replace(/[^a-z\s]/g, "").trim();
-    const mantraNormalized = mantra.toLowerCase().replace(/[^a-z\s]/g, "").trim();
+    const normalized = response
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, "")
+      .trim();
+    const mantraNormalized = mantra
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, "")
+      .trim();
 
-    if (normalized.includes(mantraNormalized) || normalized.length > mantraNormalized.length * 0.5) {
+    if (
+      normalized.includes(mantraNormalized) ||
+      normalized.length > mantraNormalized.length * 0.5
+    ) {
       break;
     }
     eugeneSay("Try again. The full mantra.");

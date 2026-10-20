@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseArgs, checkEnv } from "../src/cli.ts";
+import { checkEnv, parseArgs } from "../src/cli.ts";
 
 // Stub process.stdin.isTTY to allow empty commands in tests
 const originalIsTTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY");

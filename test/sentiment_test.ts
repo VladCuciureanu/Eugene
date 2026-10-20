@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { isNegation, capsRatio, punctuationDensity, isCalm } from "../src/sentiment.ts";
+import { capsRatio, isCalm, isNegation, punctuationDensity } from "../src/sentiment.ts";
 
 test("isNegation: detects denial words", () => {
   assert.deepEqual(isNegation("no"), true);

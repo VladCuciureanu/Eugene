@@ -1,8 +1,14 @@
 #!/usr/bin/env node
-import { parseArgs, checkEnv } from "./cli.ts";
-import { runCommand, readPipeInput, looksLikeError, describeSpawnError } from "./runner.ts";
+import { checkEnv, parseArgs } from "./cli.ts";
+import { eugeneSay } from "./prompt.ts";
+import {
+  describeSpawnError,
+  looksLikeError,
+  type RunResult,
+  readPipeInput,
+  runCommand,
+} from "./runner.ts";
 import { runStagesInteractive, runStagesNonInteractive } from "./stages/mod.ts";
-import { eugeneSay, print } from "./prompt.ts";
 
 async function main() {
   const envCheck = checkEnv();
@@ -36,7 +42,7 @@ async function main() {
     return;
   }
 
-  let result;
+  let result: RunResult;
   try {
     result = await runCommand(opts.command);
   } catch (err) {
