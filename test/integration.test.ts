@@ -8,7 +8,7 @@ const MAIN = fileURLToPath(new URL("../src/main.ts", import.meta.url));
 async function runEugene(
   args: string[],
   env?: Record<string, string>,
-  stdin?: string,
+  stdin?: string | Buffer,
 ): Promise<{
   code: number;
   stdout: string;
@@ -109,6 +109,14 @@ test("integration: pipe mode passes clean input through untouched", async () => 
   assert.equal(result.code, 0);
   assert.equal(result.stdout, "all good\n");
   assert.ok(!result.stderr.includes("Eugene:"));
+});
+
+test("integration: pipe mode keeps a multibyte character cut off at the end", async () => {
+  // "ok €" with the last byte of the euro sign missing.
+  const input = Buffer.from([0x6f, 0x6b, 0x20, 0xe2, 0x82]);
+  const result = await runEugene([], undefined, input);
+  assert.equal(result.code, 0);
+  assert.equal(result.stdout, "ok \ufffd", "the broken character is replaced, not dropped");
 });
 
 test("integration: pipe mode without a visible terminal grieves non-interactively", async () => {

@@ -87,6 +87,8 @@ export async function readPipeInput(): Promise<string> {
   for await (const chunk of process.stdin) {
     chunks.push(decoder.decode(chunk, { stream: true }));
   }
+  // Flush: an incomplete character at the very end becomes U+FFFD instead of vanishing.
+  chunks.push(decoder.decode());
 
   return chunks.join("");
 }
