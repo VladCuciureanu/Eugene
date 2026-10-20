@@ -98,6 +98,11 @@ test("parseArgs: invalid arguments throw a UsageError instead of exiting", () =>
     [["--skip-stage", "3.5", "--", "ls"], /--skip-stage requires a number 1-5/],
     [["--skip-stage", " 3", "--", "ls"], /--skip-stage requires a number 1-5/],
     [["--bogus", "--", "ls"], /unknown option '--bogus'/],
+    [["-x", "--", "ls"], /^unknown option '-x'$/],
+    [["--skip-stage"], /^--skip-stage requires a value\.$/],
+    [["--hierarchical=yes", "--", "ls"], /^Option '--hierarchical' does not take an argument/],
+    [["make", "--", "ls"], /^unexpected argument 'make'\. Put the command after '--'\.$/],
+    [["make"], /^unexpected argument 'make'/],
   ];
   for (const [args, message] of cases) {
     assert.throws(
@@ -128,4 +133,12 @@ test("parseArgs: no command on an interactive terminal asks for usage", () => {
 test("parseArgs: mantra is always a string", () => {
   const custom: string = parseArgs(["--mantra", "bugs happen", "--", "ls"]).mantra;
   assert.equal(custom, "bugs happen");
+});
+
+test("parseArgs: accepts --option=value and leaves options after -- to the command", () => {
+  const opts = parseArgs(["--speed=fast", "--skip-stage=2", "--", "ls", "--bogus", "-h"]);
+  assert.equal(opts.speed, "fast");
+  assert.deepEqual(opts.skipStages, [2]);
+  assert.equal(opts.help, false);
+  assert.deepEqual(opts.command, ["ls", "--bogus", "-h"]);
 });

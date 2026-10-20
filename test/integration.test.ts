@@ -117,6 +117,13 @@ test("integration: invalid option exits 1 with a message and no stack trace", as
   assert.equal(result.stdout, "", "the command must not run");
 });
 
+test("integration: unknown option exits 1 with a one-line usage error", async () => {
+  const result = await runEugene(["--bogus", "--", "echo", "hi"]);
+  assert.equal(result.code, 1);
+  assert.equal(result.stderr, "eugene: unknown option '--bogus'\n");
+  assert.equal(result.stdout, "", "the command must not run");
+});
+
 test("integration: --help prints usage and exits 0", async () => {
   const result = await runEugene(["--help"]);
   assert.equal(result.code, 0);

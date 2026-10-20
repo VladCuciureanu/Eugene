@@ -90,7 +90,7 @@ Pipe mode: Eugene reads all of stdin. If it contains nothing that looks like an 
 
 Eugene talks on stderr. When it cannot ask questions (stdin is not a terminal when wrapping a command; no terminal or stderr redirected in pipe mode), it prints all stages without waiting for answers.
 
-Invalid options print an error to stderr and exit 1.
+Eugene's options go before `--`; values can be written `--speed fast` or `--speed=fast`. Unknown or invalid options, and arguments before `--`, print a one-line error to stderr and exit 1.
 
 ## Development
 
