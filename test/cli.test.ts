@@ -94,6 +94,9 @@ test("parseArgs: invalid arguments throw a UsageError instead of exiting", () =>
     [["--mantra", "", "--", "ls"], /--mantra requires a value/],
     [["--skip-stage", "6", "--", "ls"], /--skip-stage requires a number 1-5/],
     [["--skip-stage", "x", "--", "ls"], /--skip-stage requires a number 1-5/],
+    [["--skip-stage", "2abc", "--", "ls"], /--skip-stage requires a number 1-5/],
+    [["--skip-stage", "3.5", "--", "ls"], /--skip-stage requires a number 1-5/],
+    [["--skip-stage", " 3", "--", "ls"], /--skip-stage requires a number 1-5/],
     [["--bogus", "--", "ls"], /unknown option '--bogus'/],
   ];
   for (const [args, message] of cases) {

@@ -89,11 +89,11 @@ export function parseArgs(args: string[]): EugeneOptions {
         break;
       case "--skip-stage": {
         i++;
-        const n = Number.parseInt(args[i], 10);
-        if (Number.isNaN(n) || n < 1 || n > 5) {
+        const val = args[i];
+        if (!/^[1-5]$/.test(val ?? "")) {
           throw new UsageError("--skip-stage requires a number 1-5.");
         }
-        opts.skipStages.push(n);
+        opts.skipStages.push(Number(val));
         break;
       }
       case "--anger-room":
