@@ -86,5 +86,9 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main();
+  main().catch((err: unknown) => {
+    // Unexpected failures get one line, like every other error, rather than a stack trace.
+    console.error(`eugene: ${err instanceof Error ? err.message : String(err)}`);
+    process.exitCode = 1;
+  });
 }
