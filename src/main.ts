@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { checkEnv, parseArgs } from "./cli.ts";
-import { eugeneSay } from "./prompt.ts";
+import { eugeneSay, io, openTerminalInput } from "./prompt.ts";
 import {
   describeSpawnError,
   looksLikeError,
@@ -20,7 +20,6 @@ async function main() {
   }
 
   const opts = parseArgs(process.argv.slice(2));
-  const isInteractive = Boolean(process.stdin.isTTY);
 
   if (opts.pipeMode) {
     const input = await readPipeInput();
@@ -31,8 +30,16 @@ async function main() {
       return;
     }
 
-    if (isInteractive) {
-      await runStagesInteractive(input, opts);
+    // stdin is the pipe we just drained, so answers have to come from the terminal itself.
+    // Only ask when Eugene's questions (on stderr) can actually be seen there.
+    const terminal = process.stderr.isTTY ? openTerminalInput() : null;
+    if (terminal) {
+      io.input = terminal;
+      try {
+        await runStagesInteractive(input, opts);
+      } finally {
+        terminal.destroy();
+      }
     } else {
       runStagesNonInteractive(input, opts);
     }
@@ -60,7 +67,7 @@ async function main() {
 
   const errorOutput = result.stderr || result.stdout;
 
-  if (isInteractive) {
+  if (process.stdin.isTTY) {
     await runStagesInteractive(errorOutput, opts);
   } else {
     runStagesNonInteractive(errorOutput, opts);

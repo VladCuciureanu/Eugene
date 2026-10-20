@@ -8,15 +8,17 @@ const MAIN = fileURLToPath(new URL("../src/main.ts", import.meta.url));
 async function runEugene(
   args: string[],
   env?: Record<string, string>,
+  stdin?: string,
 ): Promise<{
   code: number;
   stdout: string;
   stderr: string;
 }> {
   const proc = spawn(process.execPath, [MAIN, ...args], {
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio: ["pipe", "pipe", "pipe"],
     env: { ...process.env, ...env },
   });
+  proc.stdin.end(stdin ?? "");
   let stdout = "";
   let stderr = "";
   proc.stdout.setEncoding("utf8").on("data", (chunk: string) => (stdout += chunk));
@@ -89,4 +91,20 @@ test("integration: unknown command prints a friendly error without a stack trace
   );
   assert.ok(!/\n\s+at /.test(result.stderr), "Should not print a stack trace");
   assert.ok(!result.stderr.includes("ErrnoException"), "Should not leak internals");
+});
+
+test("integration: pipe mode passes clean input through untouched", async () => {
+  const result = await runEugene([], undefined, "all good\n");
+  assert.equal(result.code, 0);
+  assert.equal(result.stdout, "all good\n");
+  assert.ok(!result.stderr.includes("Eugene:"));
+});
+
+test("integration: pipe mode without a visible terminal grieves non-interactively", async () => {
+  // stderr is a pipe here, so Eugene must not wait for answers from the terminal.
+  const result = await runEugene([], undefined, "Error: piped boom\n");
+  assert.equal(result.code, 1);
+  assert.equal(result.stdout, "Error: piped boom\n", "the piped input is passed on");
+  assert.ok(result.stderr.includes("piped boom"), "the error is shown in denial");
+  assert.ok(result.stderr.includes("Go in peace."), "all stages run to the end");
 });

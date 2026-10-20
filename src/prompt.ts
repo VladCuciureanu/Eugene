@@ -1,4 +1,6 @@
+import fs from "node:fs";
 import readline from "node:readline";
+import tty from "node:tty";
 import type { Speed } from "./cli.ts";
 
 // ANSI color helpers
@@ -136,6 +138,26 @@ export async function prompt(prefix = "> "): Promise<string> {
 /** True once the input has ended and every line has been read; further prompts return "". */
 export function inputEnded(): boolean {
   return currentReader().exhausted;
+}
+
+const TERMINAL_PATH = process.platform === "win32" ? "\\\\.\\CONIN$" : "/dev/tty";
+
+/**
+ * Opens the controlling terminal for reading, bypassing stdin (which in pipe mode is the
+ * piped-in output). Returns null when there is no terminal, e.g. in CI or under cron.
+ */
+export function openTerminalInput(path = TERMINAL_PATH): tty.ReadStream | null {
+  let fd: number;
+  try {
+    fd = fs.openSync(path, "r");
+  } catch {
+    return null;
+  }
+  if (!tty.isatty(fd)) {
+    fs.closeSync(fd);
+    return null;
+  }
+  return new tty.ReadStream(fd);
 }
 
 /** Stops reading from the current input so the process can exit. */

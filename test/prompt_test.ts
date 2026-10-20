@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
-import { eugeneSay, inputEnded, prompt } from "../src/prompt.ts";
+import { eugeneSay, inputEnded, openTerminalInput, prompt } from "../src/prompt.ts";
 import { withIo } from "./helpers.ts";
 
 test("prompt: returns one trimmed line per call, even when several arrive at once", async () => {
@@ -47,4 +50,19 @@ test("eugeneSay: writes a labelled line to Eugene's output", async () => {
     eugeneSay("hello");
     assert.equal(s.output(), "Eugene: hello\n");
   });
+});
+
+test("openTerminalInput: returns null when the terminal cannot be opened", () => {
+  assert.equal(openTerminalInput(join(tmpdir(), "eugene-no-such-terminal")), null);
+});
+
+test("openTerminalInput: returns null for something that is not a terminal", () => {
+  const dir = mkdtempSync(join(tmpdir(), "eugene-"));
+  try {
+    const file = join(dir, "not-a-tty");
+    writeFileSync(file, "");
+    assert.equal(openTerminalInput(file), null);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

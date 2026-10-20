@@ -120,6 +120,8 @@ Eugene asks you to repeat an affirmation before handing back control. Default: *
 
 When Eugene can't detect a TTY (e.g., in CI or piped output), it prints all 5 stages non-interactively to stderr. You still have to read them. With your eyes.
 
+In pipe mode (`some-command 2>&1 | eugene`) stdin is the piped output, so Eugene reads your answers straight from the terminal (`/dev/tty`, or the console on Windows). If there is no terminal, or stderr is redirected away from it, it falls back to non-interactive mode.
+
 ## Development
 
 ```bash
