@@ -1,7 +1,8 @@
 import { eugeneSay, prompt } from "../prompt.ts";
 
 export async function blame(): Promise<void> {
-  eugeneSay("Before we move on — whose fault was this?");
+  // Blame comes after acceptance has already sent you off in peace.
+  eugeneSay("One more thing — whose fault was this?");
 
   const response = await prompt();
 
