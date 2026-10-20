@@ -90,7 +90,7 @@ Pipe mode: Eugene reads all of stdin. If it contains nothing that looks like an 
 
 Eugene talks on stderr. When it cannot ask questions (stdin or stderr is not a terminal when wrapping a command; no terminal or stderr redirected in pipe mode), it prints all stages without waiting for answers.
 
-If whatever reads Eugene's stdout or stderr stops early (`eugene -- cmd | head`), Eugene stops writing and exits quietly: when wrapping a command, the command's pipe is closed too, as in a shell pipeline, and Eugene exits with the command's exit code without running the stages; in pipe mode it exits 0.
+If whatever reads Eugene's stdout or stderr stops early (`eugene -- cmd | head`), Eugene stops writing and exits quietly with the exit code it would have used anyway. When wrapping a command, the command's pipe is closed too, as in a shell pipeline, and Eugene exits with the command's exit code without running the stages. In pipe mode it exits 1 if the input had errors and 0 if it was clean, so `set -o pipefail` still sees the errors. Eugene's own errors, such as an unknown option, still exit 1.
 
 Eugene's options go before `--`; values can be written `--speed fast` or `--speed=fast`. Unknown or invalid options, and arguments before `--`, print a one-line error to stderr and exit 1.
 
