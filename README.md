@@ -77,8 +77,8 @@ some-command 2>&1 | eugene
 ### The stages
 
 1. Denial: shows the first lines of the error and asks if you accept it. The third "no" gets you moved along anyway.
-2. Anger: vent. Eugene moves on once you sound calm (fewer caps and `!`, shorter lines), or after five messages.
-3. Bargaining: three absurd fixes, some based on the file names in the error.
+2. Anger: vent. Eugene moves on once you sound calm (fewer caps and symbols like `!`, shorter lines), or after five messages.
+3. Bargaining: three absurd fixes, some based on file names and quoted strings in the error.
 4. Depression: slow, dim reflection. Ctrl+C skips it; during any other stage Ctrl+C is refused.
 5. Acceptance: you confirm you are ready and repeat the mantra.
 
