@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=24.2"
+    "node": ">=26"
   },
   "bin": {
     "eugene": "dist/main.js"
@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26",
     "typescript": "^7.0.2"
   }
 }

@@ -44,7 +44,7 @@ Eugene: You may now retry your command. Go in peace.
 
 ## Install
 
-Requires Node.js 24 or newer.
+Requires Node.js 26 or newer.
 
 ```bash
 npm install
