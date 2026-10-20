@@ -74,6 +74,8 @@ function ambiguousValue(args: string[]): string | undefined {
   for (const t of tokens) {
     if (t.kind === "option-terminator") break;
     if (t.kind === "option" && !t.inlineValue && t.value?.startsWith("-")) {
+      // A value like "--speed" is almost certainly the next option, not a value: one was left out.
+      if (t.value.startsWith("--")) return `option '${t.rawName}' needs a value`;
       return `option '${t.rawName}' got '${t.value}', which looks like an option; write ${shellQuote(`${t.rawName}=${t.value}`)}`;
     }
   }

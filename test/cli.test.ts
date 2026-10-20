@@ -111,6 +111,8 @@ test("parseArgs: invalid arguments throw a UsageError instead of exiting", () =>
       ["--speed", "fast", "--skip-stage", "-1", "--", "ls"],
       /^option '--skip-stage' got '-1', which looks like an option; write --skip-stage=-1$/,
     ],
+    [["--mantra", "--speed", "fast", "--", "ls"], /^option '--mantra' needs a value$/],
+    [["--speed", "--hierarchical", "--", "ls"], /^option '--speed' needs a value$/],
     [
       ["--mantra", "-it's fine", "--", "ls"],
       /^option '--mantra' got '-it's fine', which looks like an option; write '--mantra=-it'\\''s fine'$/,
