@@ -5,6 +5,9 @@
     "clientKind": "git",
     "useIgnoreFile": true
   },
+  "files": {
+    "includes": ["**", "!package-lock.json"]
+  },
   "formatter": {
     "indentStyle": "space",
     "indentWidth": 2,
@@ -12,7 +15,12 @@
   },
   "javascript": {
     "formatter": {
-      "quoteStyle": "double"
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all"
     }
+  },
+  "linter": {
+    "enabled": true
   }
 }
