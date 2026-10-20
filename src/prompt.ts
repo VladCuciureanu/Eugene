@@ -9,15 +9,11 @@ const RESET = `${ESC}0m`;
 const CYAN = `${ESC}36m`;
 const DIM = `${ESC}2m`;
 const YELLOW = `${ESC}33m`;
-const RED = `${ESC}31m`;
-const BOLD = `${ESC}1m`;
 
 export const style = {
   eugene: (s: string) => `${CYAN}Eugene:${RESET} ${s}`,
   dim: (s: string) => `${DIM}${s}${RESET}`,
   warm: (s: string) => `${YELLOW}${s}${RESET}`,
-  error: (s: string) => `${RED}${s}${RESET}`,
-  bold: (s: string) => `${BOLD}${s}${RESET}`,
 };
 
 export interface Io {
