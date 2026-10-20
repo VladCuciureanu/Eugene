@@ -172,3 +172,60 @@ test("integration: --help prints usage and exits 0", async () => {
   assert.equal(result.code, 0);
   assert.match(result.stdout, /Usage:\n {2}eugene \[options\] -- <command>/);
 });
+
+/** Runs Eugene, closing its stdout as soon as the first output arrives, like `eugene ... | head -c 1`. */
+async function runEugeneClosingStdout(
+  args: string[],
+  stdin = "",
+): Promise<{ code: number; stderr: string }> {
+  const proc = spawn(process.execPath, [MAIN, ...args], { stdio: ["pipe", "pipe", "pipe"] });
+  proc.stdin.end(stdin);
+  proc.stdout.once("data", () => proc.stdout.destroy());
+  let stderr = "";
+  proc.stderr.setEncoding("utf8").on("data", (chunk: string) => (stderr += chunk));
+  const code = await new Promise<number>((resolve, reject) => {
+    proc.once("error", reject);
+    proc.once("close", (code) => resolve(code ?? 1));
+  });
+  return { code, stderr };
+}
+
+test("integration: a closed stdout stops Eugene quietly with the command's exit code", async () => {
+  // Writes until its own stdout breaks, then exits 3, as a command upstream of `head` would.
+  const script = `
+    process.stdout.on("error", () => process.exit(3));
+    const chunk = "x".repeat(65536);
+    (function write() {
+      while (process.stdout.write(chunk));
+      process.stdout.once("drain", write);
+    })();`;
+  const result = await runEugeneClosingStdout(["--", process.execPath, "-e", script]);
+  assert.equal(result.stderr, "", "no crash, no stages");
+  assert.equal(result.code, 3);
+});
+
+test("integration: a closed stdout in pipe mode still exits 1 when the input has errors", async () => {
+  const input = "Error: boom\n".repeat(200_000);
+  const result = await runEugeneClosingStdout(["--speed", "instant"], input);
+  assert.ok(!result.stderr.includes("EPIPE"), `no crash: ${result.stderr.slice(-500)}`);
+  assert.equal(result.code, 1, "pipefail users still learn that errors were found");
+});
+
+test("integration: a closed stdout in pipe mode exits 0 when the input is clean", async () => {
+  const input = "all good\n".repeat(200_000);
+  const result = await runEugeneClosingStdout([], input);
+  assert.equal(result.stderr, "");
+  assert.equal(result.code, 0);
+});
+
+test("integration: a closed stderr keeps a usage error's exit code", async () => {
+  const proc = spawn(process.execPath, [MAIN, "--bogus"], { stdio: ["pipe", "pipe", "pipe"] });
+  proc.stderr.destroy();
+  proc.stdin.end();
+  proc.stdout.resume();
+  const code = await new Promise<number>((resolve, reject) => {
+    proc.once("error", reject);
+    proc.once("close", (code) => resolve(code ?? -1));
+  });
+  assert.equal(code, 1);
+});
