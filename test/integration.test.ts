@@ -8,7 +8,7 @@ const MAIN = fileURLToPath(new URL("../src/main.ts", import.meta.url));
 async function runEugene(
   args: string[],
   env?: Record<string, string>,
-  stdin?: string,
+  stdin?: string | Buffer,
 ): Promise<{
   code: number;
   stdout: string;
@@ -43,19 +43,30 @@ test("integration: failed command triggers Eugene (non-interactive)", async () =
   assert.ok(result.stderr.includes("boom"), "Should contain error output");
 });
 
-test("integration: EUGENE_DISABLE skips everything", async () => {
-  const result = await runEugene(["--", "sh", "-c", "exit 1"], {
+test("integration: EUGENE_DISABLE runs the command without the stages", async () => {
+  const result = await runEugene(["--", "sh", "-c", "echo out; echo 'Error: boom' >&2; exit 3"], {
     EUGENE_DISABLE: "1",
   });
-  assert.deepEqual(result.code, 0);
+  assert.equal(result.code, 3, "the command's exit code is kept");
+  assert.equal(result.stdout, "out\n", "the command ran");
+  assert.equal(result.stderr, "Error: boom\n", "no stages");
 });
 
-test("integration: NO_EUGENE prints snark", async () => {
-  const result = await runEugene(["--", "sh", "-c", "exit 1"], {
+test("integration: NO_EUGENE prints snark and runs the command without the stages", async () => {
+  const result = await runEugene(["--", "sh", "-c", "echo out; exit 2"], {
     NO_EUGENE: "1",
   });
-  assert.deepEqual(result.code, 0);
+  assert.equal(result.code, 2);
+  assert.equal(result.stdout, "out\n");
   assert.ok(result.stderr.includes("Avoiding your emotions"), "Should print snark");
+  assert.ok(!result.stderr.includes("Go in peace."), "no stages");
+});
+
+test("integration: EUGENE_DISABLE passes piped errors through without the stages", async () => {
+  const result = await runEugene([], { EUGENE_DISABLE: "1" }, "Error: piped boom\n");
+  assert.equal(result.code, 0);
+  assert.equal(result.stdout, "Error: piped boom\n");
+  assert.equal(result.stderr, "");
 });
 
 test("integration: skip-stage works", async () => {
@@ -100,6 +111,14 @@ test("integration: pipe mode passes clean input through untouched", async () => 
   assert.ok(!result.stderr.includes("Eugene:"));
 });
 
+test("integration: pipe mode keeps a multibyte character cut off at the end", async () => {
+  // "ok €" with the last byte of the euro sign missing.
+  const input = Buffer.from([0x6f, 0x6b, 0x20, 0xe2, 0x82]);
+  const result = await runEugene([], undefined, input);
+  assert.equal(result.code, 0);
+  assert.equal(result.stdout, "ok \ufffd", "the broken character is replaced, not dropped");
+});
+
 test("integration: pipe mode without a visible terminal grieves non-interactively", async () => {
   // stderr is a pipe here, so Eugene must not wait for answers from the terminal.
   const result = await runEugene([], undefined, "Error: piped boom\n");
@@ -114,6 +133,13 @@ test("integration: invalid option exits 1 with a message and no stack trace", as
   assert.equal(result.code, 1);
   assert.match(result.stderr, /^eugene: invalid speed 'ludicrous'/);
   assert.ok(!/\n\s+at /.test(result.stderr), "Should not print a stack trace");
+  assert.equal(result.stdout, "", "the command must not run");
+});
+
+test("integration: unknown option exits 1 with a one-line usage error", async () => {
+  const result = await runEugene(["--bogus", "--", "echo", "hi"]);
+  assert.equal(result.code, 1);
+  assert.equal(result.stderr, "eugene: unknown option '--bogus'\n");
   assert.equal(result.stdout, "", "the command must not run");
 });
 

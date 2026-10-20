@@ -9,15 +9,11 @@ const RESET = `${ESC}0m`;
 const CYAN = `${ESC}36m`;
 const DIM = `${ESC}2m`;
 const YELLOW = `${ESC}33m`;
-const RED = `${ESC}31m`;
-const BOLD = `${ESC}1m`;
 
 export const style = {
   eugene: (s: string) => `${CYAN}Eugene:${RESET} ${s}`,
   dim: (s: string) => `${DIM}${s}${RESET}`,
   warm: (s: string) => `${YELLOW}${s}${RESET}`,
-  error: (s: string) => `${RED}${s}${RESET}`,
-  bold: (s: string) => `${BOLD}${s}${RESET}`,
 };
 
 export interface Io {
@@ -25,15 +21,12 @@ export interface Io {
   input: NodeJS.ReadableStream;
   /** Where Eugene talks (stderr, so it never mixes with the command's stdout). */
   output: NodeJS.WritableStream;
-  /** Source of randomness, e.g. for shuffling suggestions. Returns [0, 1). */
-  random: () => number;
 }
 
 /** Eugene's I/O. Replace fields to redirect it (tests, or a terminal opened for pipe mode). */
 export const io: Io = {
   input: process.stdin,
   output: process.stderr,
-  random: Math.random,
 };
 
 export function print(msg: string) {
@@ -138,6 +131,14 @@ export async function prompt(prefix = "> "): Promise<string> {
 /** True once the input has ended and every line has been read; further prompts return "". */
 export function inputEnded(): boolean {
   return currentReader().exhausted;
+}
+
+/**
+ * Whether Eugene can ask questions when wrapping a command: answers are read from stdin and
+ * the questions are written to stderr, so both have to be the terminal.
+ */
+export function canPromptOnStdio(): boolean {
+  return Boolean(process.stdin.isTTY && process.stderr.isTTY);
 }
 
 const TERMINAL_PATH = process.platform === "win32" ? "\\\\.\\CONIN$" : "/dev/tty";

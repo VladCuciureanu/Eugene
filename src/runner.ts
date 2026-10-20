@@ -57,26 +57,20 @@ export function describeSpawnError(
 ): { message: string; exitCode: number } {
   const cmd = command[0];
   const code = (err as NodeJS.ErrnoException | undefined)?.code;
-  const hint = "Run 'eugene --help' for usage.";
+  let problem: string;
+  let exitCode = 126;
   if (code === "ENOENT") {
-    return {
-      message: `eugene: command not found: ${cmd}
-${hint}`,
-      exitCode: 127,
-    };
+    problem = `command not found: ${cmd}`;
+    exitCode = 127;
+  } else if (code === "EACCES") {
+    problem = `permission denied: ${cmd}`;
+  } else {
+    problem = `failed to run ${cmd}: ${err instanceof Error ? err.message : String(err)}`;
   }
-  if (code === "EACCES") {
-    return {
-      message: `eugene: permission denied: ${cmd}
-${hint}`,
-      exitCode: 126,
-    };
-  }
-  const reason = err instanceof Error ? err.message : String(err);
   return {
-    message: `eugene: failed to run ${cmd}: ${reason}
-${hint}`,
-    exitCode: 126,
+    message: `eugene: ${problem}
+Run 'eugene --help' for usage.`,
+    exitCode,
   };
 }
 
@@ -87,6 +81,8 @@ export async function readPipeInput(): Promise<string> {
   for await (const chunk of process.stdin) {
     chunks.push(decoder.decode(chunk, { stream: true }));
   }
+  // Flush: an incomplete character at the very end becomes U+FFFD instead of vanishing.
+  chunks.push(decoder.decode());
 
   return chunks.join("");
 }

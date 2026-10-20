@@ -24,8 +24,8 @@ export async function anger(angerRoom: boolean): Promise<void> {
     messages++;
 
     if (angerRoom) {
-      const done =
-        response.toLowerCase().trim() === "i'm done" || response.toLowerCase().trim() === "im done";
+      // prompt() already trims the answer.
+      const done = ["i'm done", "im done"].includes(response.toLowerCase());
       // Out of input (Ctrl+D) counts as done; otherwise the room would never let you leave.
       if (done || inputEnded()) {
         eugeneSay("Good. You've processed it.");

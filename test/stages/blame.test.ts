@@ -28,6 +28,13 @@ test("blame: silence is noted", async () => {
   assert.equal(await blameReply(""), "Eugene: Silence. Also noted.");
 });
 
+test("blame: asks as an afterthought, since it runs after acceptance", async () => {
+  await withIo({ answers: ["me"] }, async (s) => {
+    await blame();
+    assert.match(s.output(), /^Eugene: One more thing — whose fault was this\?/);
+  });
+});
+
 test("blameNonInteractive: notes it anyway", async () => {
   await withIo({}, (s) => {
     blameNonInteractive();
