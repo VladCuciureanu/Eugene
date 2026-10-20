@@ -109,3 +109,7 @@ npm run dev -- -- npm test   # node --watch
 - Eugene is not a therapist (but it tries).
 - Eugene will not fix your code.
 - Eugene does not remember past sessions. Every failure is a fresh wound.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
