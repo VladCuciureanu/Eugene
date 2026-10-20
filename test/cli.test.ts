@@ -103,6 +103,20 @@ test("parseArgs: invalid arguments throw a UsageError instead of exiting", () =>
     [["--hierarchical=yes", "--", "ls"], /^Option '--hierarchical' does not take an argument/],
     [["make", "--", "ls"], /^unexpected argument 'make'\. Put the command after '--'\.$/],
     [["make"], /^unexpected argument 'make'/],
+    [
+      ["--mantra", "-calm", "--", "false"],
+      /^option '--mantra' got '-calm', which looks like an option; write --mantra=-calm$/,
+    ],
+    [
+      ["--speed", "fast", "--skip-stage", "-1", "--", "ls"],
+      /^option '--skip-stage' got '-1', which looks like an option; write --skip-stage=-1$/,
+    ],
+    [["--mantra", "--speed", "fast", "--", "ls"], /^option '--mantra' needs a value$/],
+    [["--speed", "--hierarchical", "--", "ls"], /^option '--speed' needs a value$/],
+    [
+      ["--mantra", "-it's fine", "--", "ls"],
+      /^option '--mantra' got '-it's fine', which looks like an option; write '--mantra=-it'\\''s fine'$/,
+    ],
   ];
   for (const [args, message] of cases) {
     assert.throws(
@@ -141,4 +155,31 @@ test("parseArgs: accepts --option=value and leaves options after -- to the comma
   assert.deepEqual(opts.skipStages, [2]);
   assert.equal(opts.help, false);
   assert.deepEqual(opts.command, ["ls", "--bogus", "-h"]);
+});
+
+test("parseArgs: --option=-value is accepted and everything after -- is the command", () => {
+  const opts = parseArgs(["--mantra=-calm", "--", "false", "--mantra", "-calm"]);
+  assert.equal(opts.mantra, "-calm");
+  assert.deepEqual(opts.command, ["false", "--mantra", "-calm"]);
+});
+
+test("parseArgs: every parse error is a single line", () => {
+  const cases = [
+    ["--mantra", "-calm", "--", "false"],
+    ["--speed", "-x"],
+    ["--bogus"],
+    ["--hierarchical=yes"],
+    ["--speed"],
+  ];
+  for (const args of cases) {
+    assert.throws(
+      () => parseArgs(args),
+      (err: unknown) => {
+        assert.ok(err instanceof UsageError);
+        assert.ok(!err.message.includes("\n"), `${args.join(" ")}: ${err.message}`);
+        assert.ok(!err.message.includes(".."), `${args.join(" ")}: ${err.message}`);
+        return true;
+      },
+    );
+  }
 });

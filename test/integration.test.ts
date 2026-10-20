@@ -143,6 +143,30 @@ test("integration: unknown option exits 1 with a one-line usage error", async ()
   assert.equal(result.stdout, "", "the command must not run");
 });
 
+test("integration: an option value that looks like an option gets a one-line error", async () => {
+  const result = await runEugene(["--mantra", "-calm", "--", "echo", "hi"]);
+  assert.equal(result.code, 1);
+  assert.equal(
+    result.stderr,
+    "eugene: option '--mantra' got '-calm', which looks like an option; write --mantra=-calm\n",
+  );
+  assert.equal(result.stdout, "", "the command must not run");
+});
+
+test("integration: an option followed by another long option says it needs a value", async () => {
+  const result = await runEugene(["--mantra", "--speed", "fast", "--", "echo", "hi"]);
+  assert.equal(result.code, 1);
+  assert.equal(result.stderr, "eugene: option '--mantra' needs a value\n");
+  assert.equal(result.stdout, "", "the command must not run");
+});
+
+test("integration: --option=-value is accepted and the command's arguments pass through", async () => {
+  const result = await runEugene(["--mantra=-calm", "--", "echo", "-calm", "--bogus"]);
+  assert.equal(result.code, 0);
+  assert.equal(result.stdout, "-calm --bogus\n");
+  assert.equal(result.stderr, "");
+});
+
 test("integration: --help prints usage and exits 0", async () => {
   const result = await runEugene(["--help"]);
   assert.equal(result.code, 0);
