@@ -31,21 +31,6 @@ export function punctuationDensity(text: string): number {
   return puncts / text.length;
 }
 
-export interface CalmScore {
-  caps: number;
-  punctuation: number;
-  length: number;
-}
-
-export function calmScore(text: string): CalmScore {
-  return {
-    caps: capsRatio(text),
-    punctuation: punctuationDensity(text),
-    length: text.length,
-  };
-}
-
 export function isCalm(text: string): boolean {
-  const score = calmScore(text);
-  return score.caps < 0.3 && score.punctuation < 0.15 && score.length < 40;
+  return capsRatio(text) < 0.3 && punctuationDensity(text) < 0.15 && text.length < 40;
 }
