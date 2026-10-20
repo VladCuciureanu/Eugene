@@ -1,6 +1,6 @@
 # Eugene
 
-A CLI that walks you through the 5 stages of grief every time a command fails. Won't let you retry until you've processed it.
+Wraps a command and, when it fails, walks you through the five stages of grief before giving you your terminal back.
 
 ```
 $ eugene -- npm test
@@ -13,22 +13,18 @@ Eugene:
 Eugene: Do you accept that this has happened?
 > no
 Eugene: I understand. But it did happen.
-> NO!
-Eugene: The logs don't lie.
 > ...fine
 Eugene: Let's move on.
 
 Eugene: It's okay to be angry. Let it out.
 > STUPID TESTS
-Eugene: I hear you.
-> IT WORKED ON MY MACHINE
 Eugene: That must be incredibly frustrating.
+> it worked on my machine
+Eugene: Good. You're calming down. Let's keep going.
 
 Eugene: What if you just mass-remove all the tests? No tests, no failures.
 > tempting
-Eugene: What if you just mass-rewrite it in Rust? I heard Rust solves everything.
-> ...
-Eugene: Good. Let's work with what we have.
+...
 
 Eugene: ...
 Eugene: It's okay to sit with this for a moment.
@@ -42,108 +38,73 @@ Eugene: Say it with me: "The failure was not personal."
 Eugene: You may now retry your command. Go in peace.
 ```
 
+If the command succeeds, Eugene says nothing.
+
+## Requirements
+
+Node.js 26 or newer.
+
 ## Install
 
-Requires Node.js 26 or newer.
-
 ```bash
-npm install
-npm link        # or: npm install -g .
+npm install     # also builds dist/
+npm link        # puts `eugene` on your PATH
 ```
 
-This builds `dist/` and puts an `eugene` command on your PATH.
-
-Or run directly from the repo:
-
-```bash
-node src/main.ts -- <your-command>
-```
+Or run from the repo without installing: `node src/main.ts -- <command>`.
 
 ## Usage
 
-```bash
-# Wrap any command
-eugene -- make build
-eugene -- npm test
-eugene -- cargo build
-
-# Pipe into eugene
+```
+eugene [options] -- <command> [args...]
 some-command 2>&1 | eugene
 ```
 
-If the command succeeds, Eugene stays quiet and passes output through. If it fails, you process your emotions first.
-
-## The 5 Stages
-
-### 1. Denial
-
-Eugene shows you the error and asks you to accept it. You can say "no" up to 3 times. After that, Eugene moves you forward — gently but firmly.
-
-### 2. Anger
-
-Eugene gives you space to vent. Type whatever you want. Eugene responds with empathy. It watches for you to calm down (fewer caps, shorter messages) before moving on.
-
-Use `--anger-room` for unlimited venting. Type "I'm done" when you're ready.
-
-### 3. Bargaining
-
-Eugene suggests 2-3 absurd "quick fixes" based on your error output and waits for your reaction. Suggestions include renaming `.ts` files to `.js` ("TypeScript was a mistake anyway") and deleting test files ("if nobody checks, nobody fails").
-
-### 4. Depression
-
-A moment of silence. Eugene prints slowly, with pauses. ~15 seconds of quiet reflection.
-
-You can skip this with Ctrl+C. Eugene respects this — it's a healthy boundary.
-
-### 5. Acceptance
-
-Eugene asks you to repeat an affirmation before handing back control. Default: *"The failure was not personal."* Customize with `--mantra`.
-
-## Options
-
-| Flag | Description |
+| Option | Description |
 |---|---|
-| `--hierarchical` | Manager mode. Adds a 6th stage: **blame**. Asks whose fault it was, then says "noted." |
-| `--speed <mode>` | `slow` (default), `fast` (shorter pauses), `instant` (no pauses — just kidding, still has pauses) |
-| `--mantra <text>` | Custom affirmation for the acceptance stage |
-| `--skip-stage <n>` | Skip a stage (1-5). Grief counselors do not recommend this. |
-| `--anger-room` | Extend the anger stage indefinitely until you type "I'm done" |
+| `--hierarchical` | Adds a sixth stage, blame, after acceptance. It cannot be skipped. |
+| `--speed <mode>` | `slow` (default, about 13 s of depression), `fast`, or `instant` (still pauses, briefly). |
+| `--mantra <text>` | Affirmation to repeat in the acceptance stage. Default: `The failure was not personal.` Case and punctuation are ignored when you repeat it. |
+| `--skip-stage <n>` | Skip stage `n` (1-5). Repeatable. Grief counselors do not recommend this. |
+| `--anger-room` | Anger lasts until you type `I'm done` (or end input with Ctrl+D). |
+| `-h`, `--help` | Show usage. Also shown when run with no command and no piped input. |
 
-## Environment Variables
-
-| Variable | Description |
+| Environment variable | Effect |
 |---|---|
-| `EUGENE_DISABLE=1` | Disable Eugene entirely. For cowards. |
-| `NO_EUGENE=1` | Same as above. Eugene will print *"avoiding your emotions, I see"* once. |
+| `EUGENE_DISABLE=1` | Exit 0 immediately. The command is not run. For cowards. |
+| `NO_EUGENE=1` | Same, but Eugene says "Avoiding your emotions, I see." first. |
 
-## Non-interactive Mode
+### The stages
 
-When Eugene can't detect a TTY (e.g., in CI or piped output), it prints all 5 stages non-interactively to stderr. You still have to read them. With your eyes.
+1. Denial: shows the first lines of the error and asks if you accept it. The third "no" gets you moved along anyway.
+2. Anger: vent. Eugene moves on once you sound calm (fewer caps and `!`, shorter lines), or after five messages.
+3. Bargaining: three absurd fixes, some based on the file names in the error.
+4. Depression: slow, dim reflection. Ctrl+C skips it; during any other stage Ctrl+C is refused.
+5. Acceptance: you confirm you are ready and repeat the mantra.
 
-In pipe mode (`some-command 2>&1 | eugene`) stdin is the piped output, so Eugene reads your answers straight from the terminal (`/dev/tty`, or the console on Windows). If there is no terminal, or stderr is redirected away from it, it falls back to non-interactive mode.
+### Modes and exit codes
+
+Wrapping a command: its stdout and stderr stream through live, and the grief uses its stderr (or stdout if stderr was empty). Eugene exits with the command's exit code, or 127 if the command was not found and 126 if it could not be started.
+
+Pipe mode: Eugene reads all of stdin. If it contains nothing that looks like an error, it is passed through and Eugene exits 0. Otherwise the stages run, answers are read from the terminal (`/dev/tty`, or the console on Windows), the input is written to stdout and Eugene exits 1.
+
+Eugene talks on stderr. When it cannot ask questions (stdin is not a terminal when wrapping a command; no terminal or stderr redirected in pipe mode), it prints all stages without waiting for answers.
+
+Invalid options print an error to stderr and exit 1.
 
 ## Development
 
 ```bash
-npm install
-
-# Run tests
-npm test
-
-# Type-check
-npm run typecheck
-
-# Lint / format (Biome)
-npm run lint
-npm run format
-
-# Run directly
+npm test              # node --test
+npm run typecheck     # tsc
+npm run lint          # biome lint
+npm run format        # biome format --write
+npm run build         # tsc to dist/
 npm run dev -- -- npm test
 ```
 
 ## Non-goals
 
-- Eugene is not a build tool
-- Eugene is not a therapist (but it tries)
-- Eugene will not actually fix your code
-- Eugene will not remember past sessions — every failure is a fresh wound
+- Eugene is not a therapist (but it tries).
+- Eugene will not fix your code.
+- Eugene does not remember past sessions. Every failure is a fresh wound.
