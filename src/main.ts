@@ -52,13 +52,7 @@ async function main() {
     return;
   }
 
-  if (result.stdout) {
-    process.stdout.write(result.stdout);
-  }
-  if (result.stderr) {
-    process.stderr.write(result.stderr);
-  }
-
+  // The command's output was already streamed live by runCommand.
   if (result.exitCode === 0) {
     process.exitCode = 0;
     return;

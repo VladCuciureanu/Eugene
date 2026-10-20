@@ -7,14 +7,32 @@ export interface RunResult {
   stderr: string;
 }
 
-export function runCommand(command: string[]): Promise<RunResult> {
+export interface RunOptions {
+  /** Receives the child's stdout as it arrives (default: process.stdout). */
+  stdout?: NodeJS.WritableStream;
+  /** Receives the child's stderr as it arrives (default: process.stderr). */
+  stderr?: NodeJS.WritableStream;
+}
+
+/**
+ * Runs `command`, streaming its output live to `options.stdout` / `options.stderr`
+ * while also capturing a copy for analysis once it exits.
+ */
+export function runCommand(command: string[], options: RunOptions = {}): Promise<RunResult> {
+  const { stdout: outSink = process.stdout, stderr: errSink = process.stderr } = options;
   const [cmd, ...args] = command;
   const proc = spawn(cmd, args, { stdio: ["inherit", "pipe", "pipe"] });
 
   const stdout: Buffer[] = [];
   const stderr: Buffer[] = [];
-  proc.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
-  proc.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
+  proc.stdout.on("data", (chunk: Buffer) => {
+    stdout.push(chunk);
+    outSink.write(chunk);
+  });
+  proc.stderr.on("data", (chunk: Buffer) => {
+    stderr.push(chunk);
+    errSink.write(chunk);
+  });
 
   return new Promise((resolve, reject) => {
     proc.once("error", reject);
